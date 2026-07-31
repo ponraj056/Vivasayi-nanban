@@ -1,0 +1,109 @@
+const axios = require("axios");
+
+const WA_TOKEN = process.env.WHATSAPP_TOKEN;
+const WA_PHONE_ID = process.env.WHATSAPP_PHONE_NUMBER_ID;
+const WA_API_VERSION = process.env.WHATSAPP_API_VERSION || "v20.0";
+
+const BASE_URL = `https://graph.facebook.com/${WA_API_VERSION}/${WA_PHONE_ID}`;
+
+const client = axios.create({
+  baseURL: BASE_URL,
+  headers: {
+    Authorization: `Bearer ${WA_TOKEN}`,
+    "Content-Type": "application/json",
+  },
+  timeout: 15000,
+});
+
+/**
+ * Send a plain text message
+ */
+async function sendText(to, body) {
+  return client.post("/messages", {
+    messaging_product: "whatsapp",
+    to,
+    type: "text",
+    text: { body },
+  });
+}
+
+/**
+ * Send interactive button message (max 3 buttons per WhatsApp limits)
+ * buttons: [{ id: "MENU_PRICE", title: "விலை பார்க்க" }, ...]
+ */
+async function sendButtons(to, bodyText, buttons) {
+  return client.post("/messages", {
+    messaging_product: "whatsapp",
+    to,
+    type: "interactive",
+    interactive: {
+      type: "button",
+      body: { text: bodyText },
+      action: {
+        buttons: buttons.map((b) => ({
+          type: "reply",
+          reply: { id: b.id, title: b.title.slice(0, 20) },
+        })),
+      },
+    },
+  });
+}
+
+/**
+ * Send interactive list message (for menus with more than 3 options,
+ * e.g. crop selection, district selection)
+ * rows: [{ id: "CROP_PADDY", title: "நெல்", description: "" }, ...]
+ */
+async function sendList(to, bodyText, buttonLabel, rows) {
+  return client.post("/messages", {
+    messaging_product: "whatsapp",
+    to,
+    type: "interactive",
+    interactive: {
+      type: "list",
+      body: { text: bodyText },
+      action: {
+        button: buttonLabel,
+        sections: [{ title: "Options", rows }],
+      },
+    },
+  });
+}
+
+/**
+ * Get a temporary download URL for a media ID (used for disease-detection images)
+ */
+async function getMediaUrl(mediaId) {
+  const res = await client.get(`/${mediaId}`.replace(BASE_URL, ""), {
+    baseURL: `https://graph.facebook.com/${WA_API_VERSION}`,
+  });
+  return res.data.url;
+}
+
+async function downloadMedia(mediaUrl) {
+  const res = await axios.get(mediaUrl, {
+    headers: { Authorization: `Bearer ${WA_TOKEN}` },
+    responseType: "arraybuffer",
+  });
+  return res.data;
+}
+
+/**
+ * Mark an inbound message as read (blue ticks)
+ */
+async function markAsRead(waMessageId) {
+  return client.post("/messages", {
+    messaging_product: "whatsapp",
+    status: "read",
+    message_id: waMessageId,
+  });
+}
+
+module.exports = {
+  sendText,
+  sendButtons,
+  sendList,
+  getMediaUrl,
+  downloadMedia,
+  markAsRead,
+};
