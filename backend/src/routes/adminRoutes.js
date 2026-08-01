@@ -1,0 +1,28 @@
+const express = require("express");
+const router = express.Router();
+const { protect, authorize } = require("../middleware/auth");
+const {
+  getOverviewStats,
+  getUsers,
+  updateUserStatus,
+  getWhatsAppSessions,
+  getWhatsAppMessages,
+  getBookings,
+  updateBookingStatus,
+} = require("../controllers/adminController");
+
+// Every route here requires a valid JWT AND role === "admin"
+router.use(protect, authorize("admin"));
+
+router.get("/stats", getOverviewStats);
+
+router.get("/users", getUsers);
+router.patch("/users/:id/status", updateUserStatus);
+
+router.get("/whatsapp/sessions", getWhatsAppSessions);
+router.get("/whatsapp/messages/:phoneNumber", getWhatsAppMessages);
+
+router.get("/bookings", getBookings);
+router.patch("/bookings/:id", updateBookingStatus);
+
+module.exports = router;
