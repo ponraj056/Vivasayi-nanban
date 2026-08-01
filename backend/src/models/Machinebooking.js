@@ -2,10 +2,15 @@ const mongoose = require("mongoose");
 
 const machineBookingSchema = new mongoose.Schema(
   {
-    farmerPhone: { type: String, required: true, index: true },
+    farmerPhone: { type: String, default: "" },
     farmer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
+      default: null,
+    },
+    machine: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Machine",
       default: null,
     },
     machineType: {
@@ -13,7 +18,7 @@ const machineBookingSchema = new mongoose.Schema(
       enum: ["MACHINE_TRACTOR", "MACHINE_HARVESTER", "MACHINE_SPRAYER"],
       required: true,
     },
-    requestedDate: { type: String, required: true }, // YYYY-MM-DD
+    requestedDate: { type: String, required: true },
     status: {
       type: String,
       enum: ["PENDING", "APPROVED", "REJECTED", "COMPLETED"],
