@@ -1,18 +1,13 @@
-/**
- * TODO: Replace with a real MachineBooking model once the
- * Machine Rental module is built. E.g.:
- *
- *   const MachineBooking = require("../models/MachineBooking");
- *   return MachineBooking.create({ phoneNumber, machineType, requestedDate, status: "PENDING" });
- */
+const MachineBooking = require("../models/MachineBooking");
+
 async function createMachineBookingRequest({ phoneNumber, machineType, requestedDate }) {
-  console.log("[MachineBooking] New request:", {
-    phoneNumber,
+  const booking = await MachineBooking.create({
+    farmerPhone: phoneNumber,
     machineType,
     requestedDate,
+    source: "WHATSAPP",
   });
-  // Return a fake booking id for now
-  return { bookingId: `TEMP-${Date.now()}`, status: "PENDING" };
+  return { bookingId: booking._id, status: booking.status };
 }
 
 module.exports = { createMachineBookingRequest };
