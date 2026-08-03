@@ -1,0 +1,32 @@
+{
+  "paddy_bacterial_blight": {
+    "crop": "paddy",
+    "recommendation_en": "Apply copper-based bactericide spray. Avoid excess nitrogen fertilizer. Ensure proper field drainage and remove infected plant debris.",
+    "recommendation_ta": "காப்பர் அடிப்படையிலான பாக்டீரியா நாசினியை தெளிக்கவும். அதிக நைட்ரஜன் உரத்தை தவிர்க்கவும். வயலில் நல்ல வடிகால் வசதி செய்து, பாதிக்கப்பட்ட செடி எச்சங்களை அகற்றவும்."
+  },
+  "paddy_brown_spot": {
+    "crop": "paddy",
+    "recommendation_en": "Apply fungicide such as Mancozeb or Propiconazole. Use balanced fertilization with adequate potassium. Re-check in 3-4 days.",
+    "recommendation_ta": "மான்கோசெப் அல்லது புரோபிகோனசோல் போன்ற பூஞ்சைக் கொல்லியை தெளிக்கவும். போதுமான பொட்டாசியத்துடன் சமச்சீர் உரமிடவும். 3-4 நாட்களில் மீண்டும் சரிபார்க்கவும்."
+  },
+  "paddy_leaf_smut": {
+    "crop": "paddy",
+    "recommendation_en": "Apply recommended fungicide spray. Use disease-resistant seed varieties in the next season. Maintain field hygiene.",
+    "recommendation_ta": "பரிந்துரைக்கப்பட்ட பூஞ்சைக் கொல்லியை தெளிக்கவும். அடுத்த பருவத்தில் நோய் எதிர்ப்பு சக்தி கொண்ட விதை வகைகளை பயன்படுத்தவும். வயல் தூய்மையை பராமரிக்கவும்."
+  },
+  "tomato_early_blight": {
+    "crop": "tomato",
+    "recommendation_en": "Apply fungicide spray containing Chlorothalonil or Mancozeb. Remove and destroy infected leaves. Avoid overhead watering. Re-check in 3-4 days.",
+    "recommendation_ta": "குளோரோதலோனில் அல்லது மான்கோசெப் கொண்ட பூஞ்சைக் கொல்லியை தெளிக்கவும். பாதிக்கப்பட்ட இலைகளை அகற்றி அழிக்கவும். மேலிருந்து தண்ணீர் ஊற்றுவதை தவிர்க்கவும். 3-4 நாட்களில் மீண்டும் சரிபார்க்கவும்."
+  },
+  "tomato_late_blight": {
+    "crop": "tomato",
+    "recommendation_en": "Apply fungicide with Metalaxyl or Copper oxychloride immediately. Remove infected plants to prevent spread. Improve air circulation between plants.",
+    "recommendation_ta": "உடனடியாக மெட்டாலாக்சில் அல்லது காப்பர் ஆக்ஸிகுளோரைடு கொண்ட பூஞ்சைக் கொல்லியை தெளிக்கவும். பரவாமல் இருக்க பாதிக்கப்பட்ட செடிகளை அகற்றவும். செடிகளுக்கு இடையே காற்றோட்டத்தை மேம்படுத்தவும்."
+  },
+  "tomato_leaf_mold": {
+    "crop": "tomato",
+    "recommendation_en": "Improve ventilation and reduce humidity around plants. Apply fungicide such as Chlorothalonil. Avoid wetting leaves while watering.",
+    "recommendation_ta": "செடிகளைச் சுற்றி காற்றோட்டத்தை மேம்படுத்தி ஈரப்பதத்தை குறைக்கவும். குளோரோதலோனில் போன்ற பூஞ்சைக் கொல்லியை தெளிக்கவும். நீர் பாய்ச்சும்போது இலைகள் நனையாமல் பார்த்துக்கொள்ளவும்."
+  }
+}
