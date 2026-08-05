@@ -1,12 +1,13 @@
-const WhatsAppSession = require("../models/WhatsAppSession");
-const strings = require("../utils/botStrings");
-const wa = require("./whatsappService");
+const WhatsAppSession = require("./Whatsappsession");
+const wa = require("./Whatsappservice");
+const strings = require("./Botstrings");
+const cropPriceLookup = require("./Croppricelookupservice");
+const diseaseDetection = require("./Diseasedetectionservice");
+const machineBooking = require("./Machinebookingservice ");
 
-// These two are placeholders wired to your existing modules —
-// swap the internals to call your real Crop-Price and Disease-Detection services.
-const { getLatestPrice } = require("./cropPriceLookupService");
-const { queueDiseaseDetection } = require("./diseaseDetectionService");
-const { createMachineBookingRequest } = require("./machineBookingService");
+const { getLatestPrice } = cropPriceLookup;
+const { queueDiseaseDetection } = diseaseDetection;
+const { createMachineBookingRequest } = machineBooking;
 
 /**
  * Fetch or create a session for a phone number.

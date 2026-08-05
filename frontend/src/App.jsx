@@ -4,6 +4,9 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
+import DiseaseCheck from "./pages/DiseaseCheck";
+import Marketplace from "./pages/Marketplace";
+import DealerProducts from "./pages/DealerProducts";
 
 export default function App() {
   return (
@@ -18,6 +21,30 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/farmer/disease-check"
+            element={
+              <ProtectedRoute>
+                <DiseaseCheck />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/farmer/marketplace"
+            element={
+              <ProtectedRoute>
+                <Marketplace />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/dealer/products"
+            element={
+              <ProtectedRoute>
+                <DealerProducts />
               </ProtectedRoute>
             }
           />

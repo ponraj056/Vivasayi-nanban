@@ -1,21 +1,36 @@
-require("dotenv").config({ path: "../.env" });
+require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
-const connectDB = require("./config/db");
+const mongoose = require("mongoose");
 
-connectDB();
+const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
+const whatsappRoutes = require("./Whatsapproutes");
+const machineRoutes = require("./routes/machineRoutes");
+// const cropPriceRoutes = require("./routes/cropPriceRoutes");
+const diseaseRoutes = require("./routes/diseaseRoutes");
+const dealerRoutes = require("./routes/dealerRoutes");
+const { startCronJobs } = require("./cronService");
 
 const app = express();
 
-app.use(cors({ origin: "http://localhost:3000", credentials: true }));
+// Middleware
+app.use(cors({ origin: process.env.FRONTEND_URL || "http://localhost:5173" }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/api/auth", require("./routes/authRoutes"));
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/whatsapp", whatsappRoutes);
+app.use("/api/machines", machineRoutes);
+// app.use("/api/crop-price", cropPriceRoutes);
+app.use("/api/disease", diseaseRoutes);
+app.use("/api/dealer", dealerRoutes);
 
 // Health check
-app.get("/api/health", (req, res) => {
-  res.json({ success: true, message: "Vivasayi Nanban API running" });
+app.get("/", (req, res) => {
+  res.json({ success: true, message: "Vivasayi Nanban API is running" });
 });
 
 // 404 handler
@@ -23,5 +38,24 @@ app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
 
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ success: false, message: "Server error" });
+});
+
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+mongoose
+  .connect(process.env.MONGO_URI)
+  .then(() => {
+    console.log("MongoDB connected");
+    startCronJobs(); // Initialize scheduled tasks
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.error("MongoDB connection error:", err.message);
+    process.exit(1);
+  });
