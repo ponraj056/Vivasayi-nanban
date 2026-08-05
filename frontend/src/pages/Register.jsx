@@ -61,7 +61,8 @@ export default function Register() {
         setStep(3); // Go to OTP step
       }
     } catch (err) {
-      const errorMessage = err.response?.data?.message || "Registration failed. Please try again.";
+      console.error("Frontend Registration Error:", err);
+      const errorMessage = err.response?.data?.message || "DefaultError: Network or Server issue.";
       setError(errorMessage);
       if (errorMessage.includes("already registered and verified")) {
         setTimeout(() => navigate("/login"), 3000);
@@ -226,7 +227,7 @@ export default function Register() {
               </button>
 
               <p style={{ textAlign: "center", marginTop: 15, fontSize: 13 }}>
-                Didn't receive the code? <span style={styles.link} onClick={handleResendOTP} style={{cursor: "pointer", color: "#2E7D32", fontWeight: 600}}>Resend OTP</span>
+                Didn't receive the code? <span onClick={handleResendOTP} style={{ ...styles.link, cursor: "pointer", color: "#2E7D32", fontWeight: 600 }}>Resend OTP</span>
               </p>
             </>
           )}

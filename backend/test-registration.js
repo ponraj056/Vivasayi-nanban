@@ -17,7 +17,7 @@ async function testRegistration() {
     });
     console.log('Registration Success:', res.data);
   } catch (err) {
-    console.error('Registration Error:', err.response ? err.response.data : err.message);
+    console.error('Registration Error Data:', err.response ? err.response.data : err.message);
   }
 }
 
