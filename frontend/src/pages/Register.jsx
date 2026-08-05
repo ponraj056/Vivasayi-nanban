@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
+import Select from "react-select";
 
 const ROLES = [
   { value: "farmer", label: "விவசாயி (Farmer)", icon: "🌾", color: "#2E7D32" },
@@ -10,7 +11,7 @@ const ROLES = [
 
 export default function Register() {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // step 1: basic info, step 2: role profile, step 3: otp
+  const [step, setStep] = useState(1);
   const [error, setError] = useState("");
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
@@ -18,13 +19,73 @@ export default function Register() {
 
   const [form, setForm] = useState({
     name: "", email: "", phone: "", password: "", role: "",
-    // farmer
-    farmerProfile: { location: "", district: "", landSize: "", crops: "" },
-    // dealer
+    farmerProfile: { location: "", district: "", taluk: "", village: "", pincode: "", landSize: "", crops: "" },
     dealerProfile: { shopName: "", address: "", district: "", pincode: "" },
-    // machine_owner
     machineOwnerProfile: { district: "", serviceRadius: "" },
   });
+
+  // Location feature state
+  const [useFarmLocation, setUseFarmLocation] = useState(false);
+  const [districts, setDistricts] = useState([]);
+  const [taluks, setTaluks] = useState([]);
+  const [villages, setVillages] = useState([]);
+  const [locLoading, setLocLoading] = useState({ dist: false, taluk: false, vill: false });
+
+  // Fetch districts on mount
+  useEffect(() => {
+    const fetchDist = async () => {
+      setLocLoading((l) => ({ ...l, dist: true }));
+      try {
+        const { data } = await axios.get("http://127.0.0.1:5000/api/locations/districts");
+        if (data.success) setDistricts(data.districts);
+      } catch (err) {
+        console.error("Failed to load districts", err);
+      } finally {
+        setLocLoading((l) => ({ ...l, dist: false }));
+      }
+    };
+    fetchDist();
+  }, []);
+
+  // Fetch taluks when district changes
+  useEffect(() => {
+    if (!form.farmerProfile.district) {
+      setTaluks([]);
+      return;
+    }
+    const fetchTaluks = async () => {
+      setLocLoading((l) => ({ ...l, taluk: true }));
+      try {
+        const { data } = await axios.get(`http://127.0.0.1:5000/api/locations/taluks?district=${form.farmerProfile.district}`);
+        if (data.success) setTaluks(data.taluks);
+      } catch (err) {
+        console.error("Failed to load taluks", err);
+      } finally {
+        setLocLoading((l) => ({ ...l, taluk: false }));
+      }
+    };
+    fetchTaluks();
+  }, [form.farmerProfile.district]);
+
+  // Fetch villages when taluk changes
+  useEffect(() => {
+    if (!form.farmerProfile.taluk) {
+      setVillages([]);
+      return;
+    }
+    const fetchVillages = async () => {
+      setLocLoading((l) => ({ ...l, vill: true }));
+      try {
+        const { data } = await axios.get(`http://127.0.0.1:5000/api/locations/villages?district=${form.farmerProfile.district}&taluk=${form.farmerProfile.taluk}`);
+        if (data.success) setVillages(data.villages);
+      } catch (err) {
+        console.error("Failed to load villages", err);
+      } finally {
+        setLocLoading((l) => ({ ...l, vill: false }));
+      }
+    };
+    fetchVillages();
+  }, [form.farmerProfile.taluk]);
 
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
   const setProfile = (role, field, val) => {
@@ -32,9 +93,42 @@ export default function Register() {
     setForm((f) => ({ ...f, [key]: { ...f[key], [field]: val } }));
   };
 
+  const handleDistrictChange = (e) => {
+    const val = e.target.value;
+    setForm((f) => ({
+      ...f,
+      farmerProfile: { ...f.farmerProfile, district: val, taluk: "", village: "", pincode: "" }
+    }));
+  };
+
+  const handleTalukChange = (e) => {
+    const val = e.target.value;
+    setForm((f) => ({
+      ...f,
+      farmerProfile: { ...f.farmerProfile, taluk: val, village: "", pincode: "" }
+    }));
+  };
+
+  const handleVillageChange = (selectedOption) => {
+    setForm((f) => ({
+      ...f,
+      farmerProfile: { ...f.farmerProfile, village: selectedOption ? selectedOption.value : "", pincode: selectedOption ? selectedOption.pincode : "" }
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
+    
+    // Validation for location
+    if (form.role === "farmer" && useFarmLocation) {
+      const p = form.farmerProfile;
+      if (!p.district || !p.taluk || !p.village) {
+        setError("Please complete your farm location selection (District, Taluk, Village).");
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -45,7 +139,7 @@ export default function Register() {
         payload.farmerProfile = {
           ...form.farmerProfile,
           landSize: parseFloat(form.farmerProfile.landSize) || 0,
-          crops: form.farmerProfile.crops.split(",").map((c) => c.trim()).filter(Boolean),
+          crops: form.farmerProfile.crops ? form.farmerProfile.crops.split(",").map((c) => c.trim()).filter(Boolean) : [],
         };
       }
       if (form.role === "dealer") payload.dealerProfile = form.dealerProfile;
@@ -55,12 +149,10 @@ export default function Register() {
           serviceRadius: parseFloat(form.machineOwnerProfile.serviceRadius) || 0,
         };
       }
-      // Call raw API because authContext register sets token directly
       const { data } = await axios.post("http://127.0.0.1:5000/api/auth/register", payload);
-      
       if (data.success) {
         setMsg("OTP sent to your email!");
-        setStep(3); // Go to OTP step
+        setStep(3);
       }
     } catch (err) {
       console.error("Frontend Registration Error:", err);
@@ -165,12 +257,66 @@ export default function Register() {
 
               {form.role === "farmer" && (
                 <>
-                  {[["location","Village/Town"],["district","District"],["landSize","Land Size (acres)"],["crops","Crops (comma separated, e.g. rice, chilli)"]].map(([field, label]) => (
-                    <div key={field}>
-                      <label style={styles.label}>{label}</label>
-                      <input style={styles.input} value={form.farmerProfile[field]} onChange={(e) => setProfile("farmer", field, e.target.value)} />
+                  <div style={{ marginBottom: 15 }}>
+                    <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14, cursor: "pointer", fontWeight: 500, color: "#1B5E20" }}>
+                      <input 
+                        type="checkbox" 
+                        checked={useFarmLocation} 
+                        onChange={(e) => setUseFarmLocation(e.target.checked)} 
+                        style={{ width: 18, height: 18, cursor: "pointer" }}
+                      />
+                      Use my farm location for personalized advisory
+                    </label>
+                  </div>
+
+                  {useFarmLocation && (
+                    <div style={{ background: "#f9fcf9", padding: 15, borderRadius: 8, border: "1px solid #e0e0e0", marginBottom: 15, display: "flex", flexDirection: "column", gap: 10 }}>
+                      
+                      <div>
+                        <label style={styles.label}>District {useFarmLocation && <span style={{color:"red"}}>*</span>}</label>
+                        <select style={styles.input} value={form.farmerProfile.district} onChange={handleDistrictChange} required={useFarmLocation}>
+                          <option value="">{locLoading.dist ? "Loading..." : "Select District"}</option>
+                          {districts.map(d => <option key={d} value={d}>{d}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={styles.label}>Taluk {useFarmLocation && <span style={{color:"red"}}>*</span>}</label>
+                        <select style={styles.input} value={form.farmerProfile.taluk} onChange={handleTalukChange} disabled={!form.farmerProfile.district} required={useFarmLocation}>
+                          <option value="">{locLoading.taluk ? "Loading..." : "Select Taluk"}</option>
+                          {taluks.map(t => <option key={t} value={t}>{t}</option>)}
+                        </select>
+                      </div>
+
+                      <div>
+                        <label style={styles.label}>Village {useFarmLocation && <span style={{color:"red"}}>*</span>}</label>
+                        <Select
+                          isDisabled={!form.farmerProfile.taluk}
+                          isLoading={locLoading.vill}
+                          options={villages.map(v => ({ value: v.village, label: v.village, pincode: v.pincode }))}
+                          value={form.farmerProfile.village ? { value: form.farmerProfile.village, label: form.farmerProfile.village } : null}
+                          onChange={handleVillageChange}
+                          placeholder="Select Village..."
+                          styles={{ control: (base) => ({ ...base, borderRadius: 8, borderColor: "#ddd", minHeight: 40 }) }}
+                        />
+                      </div>
+
+                      <div>
+                        <label style={styles.label}>Pincode</label>
+                        <input style={{...styles.input, background: "#f0f0f0", color: "#666"}} value={form.farmerProfile.pincode} readOnly placeholder="Auto-filled" />
+                      </div>
+
                     </div>
-                  ))}
+                  )}
+
+                  <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                    {[["landSize","Land Size (acres)"],["crops","Crops (comma separated, e.g. rice, chilli)"]].map(([field, label]) => (
+                      <div key={field}>
+                        <label style={styles.label}>{label}</label>
+                        <input style={styles.input} value={form.farmerProfile[field]} onChange={(e) => setProfile("farmer", field, e.target.value)} />
+                      </div>
+                    ))}
+                  </div>
                 </>
               )}
 
