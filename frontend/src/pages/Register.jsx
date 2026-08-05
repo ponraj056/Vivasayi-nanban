@@ -27,8 +27,10 @@ export default function Register() {
   });
 
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
-  const setProfile = (role, field, val) =>
-    setForm((f) => ({ ...f, [`${role}Profile`]: { ...f[`${role}Profile`], [field]: val } }));
+  const setProfile = (role, field, val) => {
+    const key = role === "machine_owner" ? "machineOwnerProfile" : `${role}Profile`;
+    setForm((f) => ({ ...f, [key]: { ...f[key], [field]: val } }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
