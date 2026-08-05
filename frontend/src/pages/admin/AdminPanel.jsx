@@ -25,8 +25,8 @@ export default function AdminPanel() {
     try {
       const headers = { Authorization: `Bearer ${token}` };
       const [statsRes, usersRes] = await Promise.all([
-        axios.get("http://localhost:5000/api/admin/stats", { headers }),
-        axios.get(`http://localhost:5000/api/admin/users?search=${search}&role=${roleFilter}`, { headers }),
+        axios.get("http://127.0.0.1:5000/api/admin/stats", { headers }),
+        axios.get(`http://127.0.0.1:5000/api/admin/users?search=${search}&role=${roleFilter}`, { headers }),
       ]);
       setStats(statsRes.data.stats);
       setUsers(usersRes.data.users);
@@ -46,7 +46,7 @@ export default function AdminPanel() {
 
   const toggleUserStatus = async (id, currentStatus) => {
     try {
-      await axios.patch(`http://localhost:5000/api/admin/users/${id}/status`, 
+      await axios.patch(`http://127.0.0.1:5000/api/admin/users/${id}/status`, 
         { isActive: !currentStatus }, 
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -59,7 +59,7 @@ export default function AdminPanel() {
   const deleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await axios.delete(`http://localhost:5000/api/admin/users/${id}`, {
+      await axios.delete(`http://127.0.0.1:5000/api/admin/users/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchData();

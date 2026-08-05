@@ -3,7 +3,7 @@ import axios from "axios";
 
 const AuthContext = createContext();
 
-const API = "http://localhost:5000/api";
+const API = "http://127.0.0.1:5000/api";
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
