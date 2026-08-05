@@ -114,6 +114,43 @@ async function updateUserStatus(req, res) {
 }
 
 /**
+ * PATCH /api/admin/users/:id/role
+ * body: { role: "farmer"|"dealer"|"machine_owner"|"admin" }
+ */
+async function updateUserRole(req, res) {
+  try {
+    const { role } = req.body;
+    const user = await User.findByIdAndUpdate(
+      req.params.id,
+      { role },
+      { new: true }
+    ).select("-password");
+
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json({ success: true, user });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+/**
+ * DELETE /api/admin/users/:id
+ */
+async function deleteUser(req, res) {
+  try {
+    const user = await User.findByIdAndDelete(req.params.id);
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+    res.json({ success: true, message: "User deleted successfully" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+/**
  * GET /api/admin/whatsapp/sessions
  * List all active WhatsApp conversation sessions.
  */
@@ -193,6 +230,8 @@ module.exports = {
   getOverviewStats,
   getUsers,
   updateUserStatus,
+  updateUserRole,
+  deleteUser,
   getWhatsAppSessions,
   getWhatsAppMessages,
   getBookings,

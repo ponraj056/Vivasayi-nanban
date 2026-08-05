@@ -6,6 +6,7 @@ import Register from "./pages/Register";
 import VerifyEmail from "./pages/VerifyEmail";
 import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
+import AdminPanel from "./pages/admin/AdminPanel";
 import DiseaseCheck from "./pages/DiseaseCheck";
 import Marketplace from "./pages/Marketplace";
 import DealerProducts from "./pages/DealerProducts";
@@ -25,6 +26,14 @@ export default function App() {
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/admin-panel"
+            element={
+              <ProtectedRoute>
+                <AdminPanel />
               </ProtectedRoute>
             }
           />

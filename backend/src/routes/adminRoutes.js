@@ -5,6 +5,8 @@ const {
   getOverviewStats,
   getUsers,
   updateUserStatus,
+  updateUserRole,
+  deleteUser,
   getWhatsAppSessions,
   getWhatsAppMessages,
   getBookings,
@@ -18,6 +20,8 @@ router.get("/stats", getOverviewStats);
 
 router.get("/users", getUsers);
 router.patch("/users/:id/status", updateUserStatus);
+router.patch("/users/:id/role", updateUserRole);
+router.delete("/users/:id", deleteUser);
 
 router.get("/whatsapp/sessions", getWhatsAppSessions);
 router.get("/whatsapp/messages/:phoneNumber", getWhatsAppMessages);

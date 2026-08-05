@@ -120,11 +120,9 @@ const AdminDashboard = ({ user }) => (
 
     <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Quick Actions</h3>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+      <ActionBtn icon="👥" label="Control Panel" color="#6A1B9A" onClick={() => window.location.href = '/admin-panel'} />
       <ActionBtn icon="✅" label="Verify Dealers" color="#1565C0" />
       <ActionBtn icon="🚜" label="Verify Machines" color="#E65100" />
-      <ActionBtn icon="👥" label="All Users" color="#6A1B9A" />
-      <ActionBtn icon="🗺️" label="Disease Map" color="#c62828" />
-      <ActionBtn icon="📊" label="Analytics" color="#2E7D32" />
     </div>
 
     <div style={{ background: "#F3E5F5", borderRadius: 12, padding: "1rem" }}>
