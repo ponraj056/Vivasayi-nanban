@@ -63,7 +63,7 @@ const register = async (req, res) => {
     });
   } catch (err) {
     console.error("Registration error:", err);
-    res.status(500).json({ success: false, message: err.message || "Registration failed" });
+    res.status(500).json({ success: false, message: err.message.includes("SMTP") || err.message.includes("Could not send email") ? "Could not send OTP email. Please check your SMTP settings in .env." : (err.message || "Registration failed") });
   }
 };
 
