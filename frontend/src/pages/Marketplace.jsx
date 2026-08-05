@@ -12,8 +12,8 @@ export default function Marketplace() {
 
   const fetchProducts = async () => {
     try {
-      // Proxy setup assumes localhost:5000 is accessible
-      const res = await fetch('http://localhost:5000/api/dealer/products');
+      // Proxy setup assumes 127.0.0.1:5000 is accessible
+      const res = await fetch('http://127.0.0.1:5000/api/dealer/products');
       const data = await res.json();
       if (data.success) {
         setProducts(data.products);

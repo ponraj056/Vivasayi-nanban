@@ -18,7 +18,7 @@ export default function DealerProducts() {
     try {
       // Simulate auth token
       const token = localStorage.getItem('token') || 'dummy-token';
-      const res = await fetch('http://localhost:5000/api/dealer/my-products', {
+      const res = await fetch('http://127.0.0.1:5000/api/dealer/my-products', {
         headers: { Authorization: `Bearer ${token}` }
       });
       const data = await res.json();
@@ -34,7 +34,7 @@ export default function DealerProducts() {
     e.preventDefault();
     const token = localStorage.getItem('token') || 'dummy-token';
     try {
-      const res = await fetch('http://localhost:5000/api/dealer/products', {
+      const res = await fetch('http://127.0.0.1:5000/api/dealer/products', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

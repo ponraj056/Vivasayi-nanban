@@ -17,7 +17,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError(""); setMsg(""); setLoading(true);
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/forgot-password", { email });
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/forgot-password", { email });
       if (data.success) {
         setMsg("OTP sent to your email.");
         setStep(2);
@@ -33,7 +33,7 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError(""); setMsg(""); setLoading(true);
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/reset-password", {
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/reset-password", {
         email, otp, newPassword
       });
       if (data.success) {

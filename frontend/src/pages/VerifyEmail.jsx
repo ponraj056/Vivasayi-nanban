@@ -28,7 +28,7 @@ export default function VerifyEmail() {
     setMsg("");
     setLoading(true);
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/verify-otp", {
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/verify-otp", {
         email: state.email,
         otp,
       });
@@ -53,7 +53,7 @@ export default function VerifyEmail() {
     setError("");
     setMsg("");
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/resend-otp", {
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/resend-otp", {
         email: state.email,
       });
       if (data.success) {
