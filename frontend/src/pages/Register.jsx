@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import axios from "axios";
 
 const ROLES = [
   { value: "farmer", label: "விவசாயி (Farmer)", icon: "🌾", color: "#2E7D32" },
@@ -9,7 +9,6 @@ const ROLES = [
 ];
 
 export default function Register() {
-  const { register } = useAuth();
   const navigate = useNavigate();
   const [step, setStep] = useState(1); // step 1: basic info, step 2: role profile
   const [error, setError] = useState("");
@@ -52,10 +51,14 @@ export default function Register() {
           serviceRadius: parseFloat(form.machineOwnerProfile.serviceRadius) || 0,
         };
       }
-      const user = await register(payload);
-      navigate(`/dashboard/${user.role}`);
+      // Call raw API because authContext register sets token directly
+      const { data } = await axios.post("http://localhost:5000/api/auth/register", payload);
+      
+      if (data.success) {
+        navigate("/verify-email", { state: { email: payload.email } });
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed.");
+      setError(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
