@@ -1,5 +1,5 @@
 const Machine = require("../models/Machine");
-const MachineBooking = require("../models/MachineBooking");
+const MachineBooking = require("../models/Machinebooking");
 
 /* ---------------------------- FARMER SIDE ---------------------------- */
 

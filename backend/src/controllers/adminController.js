@@ -1,7 +1,7 @@
 const User = require("../models/User");
-const WhatsAppSession = require("../models/WhatsAppSession");
-const WhatsAppMessageLog = require("../models/WhatsAppMessageLog");
-const MachineBooking = require("../models/MachineBooking");
+const WhatsAppSession = require("../Whatsappsession");
+const WhatsAppMessageLog = require("../Whatsappmessagelog ");
+const MachineBooking = require("../models/Machinebooking");
 
 /**
  * GET /api/admin/stats
