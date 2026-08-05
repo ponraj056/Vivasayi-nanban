@@ -13,6 +13,9 @@ const userSchema = new mongoose.Schema(
       required: true,
     },
     isActive: { type: Boolean, default: true },
+    isVerified: { type: Boolean, default: false },
+    otp: { type: String, default: null },
+    otpExpiry: { type: Date, default: null },
 
     // Role-specific profile fields
     village: { type: String, default: "" },
@@ -31,7 +34,7 @@ userSchema.pre("save", async function (next) {
   next();
 });
 
-userSchema.methods.comparePassword = async function (candidatePassword) {
+userSchema.methods.matchPassword = async function (candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
