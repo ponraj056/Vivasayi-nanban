@@ -56,7 +56,7 @@ export default function Register() {
         };
       }
       // Call raw API because authContext register sets token directly
-      const { data } = await axios.post("http://localhost:5000/api/auth/register", payload);
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/register", payload);
       
       if (data.success) {
         setMsg("OTP sent to your email!");
@@ -80,7 +80,7 @@ export default function Register() {
     setMsg("");
     setLoading(true);
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/verify-otp", {
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/verify-otp", {
         email: form.email,
         otp,
       });
@@ -103,7 +103,7 @@ export default function Register() {
     setError("");
     setMsg("");
     try {
-      const { data } = await axios.post("http://localhost:5000/api/auth/resend-otp", {
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/resend-otp", {
         email: form.email,
       });
       if (data.success) {
