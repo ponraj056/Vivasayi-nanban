@@ -10,6 +10,7 @@ const machineRoutes = require("./routes/machineRoutes");
 // const cropPriceRoutes = require("./routes/cropPriceRoutes");
 const diseaseRoutes = require("./routes/diseaseRoutes");
 const dealerRoutes = require("./routes/dealerRoutes");
+const locationRoutes = require("./routes/locationRoutes");
 const { startCronJobs } = require("./cronService");
 
 const app = express();
@@ -27,6 +28,7 @@ app.use("/api/machines", machineRoutes);
 // app.use("/api/crop-price", cropPriceRoutes);
 app.use("/api/disease", diseaseRoutes);
 app.use("/api/dealer", dealerRoutes);
+app.use("/api/locations", locationRoutes);
 
 // Health check
 app.get("/", (req, res) => {

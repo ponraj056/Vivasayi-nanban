@@ -7,6 +7,15 @@ const userSchema = new mongoose.Schema(
     phone: { type: String, required: true, unique: true },
     email: { type: String, default: "" },
     password: { type: String, required: true },
+    farmerProfile: {
+      location: String,
+      district: String,
+      taluk: String,
+      village: String,
+      pincode: String,
+      landSize: Number, // in acres
+      crops: [String],
+    },
     role: {
       type: String,
       enum: ["farmer", "dealer", "machineOwner", "admin"],
@@ -17,13 +26,16 @@ const userSchema = new mongoose.Schema(
     otp: { type: String, default: null },
     otpExpiry: { type: Date, default: null },
 
-    // Role-specific profile fields
-    village: { type: String, default: "" },
-    district: { type: String, default: "" },
-    landSize: { type: Number, default: null }, // farmer
-    crops: [{ type: String }], // farmer
-    shopName: { type: String, default: "" }, // dealer
-    businessType: { type: String, default: "" }, // dealer
+    dealerProfile: {
+      shopName: String,
+      address: String,
+      district: String,
+      pincode: String,
+    },
+    machineOwnerProfile: {
+      district: String,
+      serviceRadius: Number,
+    },
   },
   { timestamps: true }
 );
