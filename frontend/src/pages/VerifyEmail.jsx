@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 import { useAuth } from "../context/AuthContext";
@@ -13,11 +13,14 @@ export default function VerifyEmail() {
   const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // If no email in state, redirect to register
-  if (!state?.email) {
-    navigate("/register");
-    return null;
-  }
+  // Redirect to register if state is missing
+  useEffect(() => {
+    if (!state?.email) {
+      navigate("/register");
+    }
+  }, [state, navigate]);
+
+  if (!state?.email) return null;
 
   const handleVerify = async (e) => {
     e.preventDefault();
