@@ -8,8 +8,7 @@ model = YOLO(str(MODEL_PATH))
 
 # Load recommendations lookup
 RECOMMENDATIONS_PATH = Path(__file__).parent.parent / "data" / "recommendations.json"
-with open(RECOMMENDATIONS_PATH, "r", encoding="utf-8") as f:
-    RECOMMENDATIONS = json.load(f)
+with open(RECOMMENDATIONS_PATH, "r", encoding="utf-8-sig") as f:    RECOMMENDATIONS = json.load(f)
 
 
 def predict_disease(image_path: str) -> dict:
