@@ -34,10 +34,10 @@ const FarmerDashboard = ({ user }) => (
 
     <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Quick Actions</h3>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
-      <ActionBtn icon="📸" label="Disease Check" color="#c62828" />
+      <ActionBtn icon="📸" label="Disease Check" color="#c62828" onClick={() => window.location.href = '/dashboard/farmer/disease-check'} />
       <ActionBtn icon="📈" label="Price Alert" color="#1565C0" />
       <ActionBtn icon="🌦️" label="Weather" color="#0277bd" />
-      <ActionBtn icon="🏪" label="Find Shop" color="#2E7D32" />
+      <ActionBtn icon="🏪" label="Find Shop" color="#2E7D32" onClick={() => window.location.href = '/dashboard/farmer/marketplace'} />
       <ActionBtn icon="🚜" label="Machine" color="#E65100" />
       <ActionBtn icon="💸" label="Expenses" color="#6A1B9A" />
     </div>
@@ -64,7 +64,7 @@ const DealerDashboard = ({ user }) => (
 
     <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Quick Actions</h3>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
-      <ActionBtn icon="➕" label="Add Product" color="#1565C0" />
+      <ActionBtn icon="➕" label="Add Product" color="#1565C0" onClick={() => window.location.href = '/dashboard/dealer/products'} />
       <ActionBtn icon="📋" label="View Orders" color="#2E7D32" />
       <ActionBtn icon="📦" label="Update Stock" color="#E65100" />
       <ActionBtn icon="📊" label="Sales Report" color="#6A1B9A" />
@@ -120,11 +120,9 @@ const AdminDashboard = ({ user }) => (
 
     <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Quick Actions</h3>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+      <ActionBtn icon="👥" label="Control Panel" color="#6A1B9A" onClick={() => window.location.href = '/admin-panel'} />
       <ActionBtn icon="✅" label="Verify Dealers" color="#1565C0" />
       <ActionBtn icon="🚜" label="Verify Machines" color="#E65100" />
-      <ActionBtn icon="👥" label="All Users" color="#6A1B9A" />
-      <ActionBtn icon="🗺️" label="Disease Map" color="#c62828" />
-      <ActionBtn icon="📊" label="Analytics" color="#2E7D32" />
     </div>
 
     <div style={{ background: "#F3E5F5", borderRadius: 12, padding: "1rem" }}>

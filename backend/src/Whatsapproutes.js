@@ -3,7 +3,7 @@ const router = express.Router();
 const {
   verifyWebhook,
   receiveWebhook,
-} = require("../controllers/whatsappController");
+} = require("./Whatsappcontroller");
 
 // Meta calls GET once to verify the webhook URL
 router.get("/webhook", verifyWebhook);

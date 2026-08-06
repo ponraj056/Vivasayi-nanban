@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import axios from "axios";
 
 const ROLES = [
   { value: "farmer", label: "விவசாயி (Farmer)", icon: "🌾", color: "#2E7D32" },
@@ -9,11 +9,12 @@ const ROLES = [
 ];
 
 export default function Register() {
-  const { register } = useAuth();
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // step 1: basic info, step 2: role profile
+  const [step, setStep] = useState(1); // step 1: basic info, step 2: role profile, step 3: otp
   const [error, setError] = useState("");
+  const [msg, setMsg] = useState("");
   const [loading, setLoading] = useState(false);
+  const [otp, setOtp] = useState("");
 
   const [form, setForm] = useState({
     name: "", email: "", phone: "", password: "", role: "",
@@ -26,8 +27,10 @@ export default function Register() {
   });
 
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
-  const setProfile = (role, field, val) =>
-    setForm((f) => ({ ...f, [`${role}Profile`]: { ...f[`${role}Profile`], [field]: val } }));
+  const setProfile = (role, field, val) => {
+    const key = role === "machine_owner" ? "machineOwnerProfile" : `${role}Profile`;
+    setForm((f) => ({ ...f, [key]: { ...f[key], [field]: val } }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -52,12 +55,62 @@ export default function Register() {
           serviceRadius: parseFloat(form.machineOwnerProfile.serviceRadius) || 0,
         };
       }
-      const user = await register(payload);
-      navigate(`/dashboard/${user.role}`);
+      // Call raw API because authContext register sets token directly
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/register", payload);
+      
+      if (data.success) {
+        setMsg("OTP sent to your email!");
+        setStep(3); // Go to OTP step
+      }
     } catch (err) {
-      setError(err.response?.data?.message || "Registration failed.");
+      console.error("Frontend Registration Error:", err);
+      const errorMessage = err.response?.data?.message || "DefaultError: Network or Server issue.";
+      setError(errorMessage);
+      if (errorMessage.includes("already registered and verified")) {
+        setTimeout(() => navigate("/login"), 3000);
+      }
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setError("");
+    setMsg("");
+    setLoading(true);
+    try {
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/verify-otp", {
+        email: form.email,
+        otp,
+      });
+      if (data.success) {
+        setMsg("Email verified successfully! Redirecting...");
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
+        setTimeout(() => {
+          window.location.href = `/dashboard/${data.user.role}`;
+        }, 1500);
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Invalid OTP. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOTP = async () => {
+    setError("");
+    setMsg("");
+    try {
+      const { data } = await axios.post("http://127.0.0.1:5000/api/auth/resend-otp", {
+        email: form.email,
+      });
+      if (data.success) {
+        setMsg("A new OTP has been sent to your email.");
+      }
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to resend OTP.");
     }
   };
 
@@ -73,8 +126,9 @@ export default function Register() {
         </div>
 
         {error && <div style={styles.error}>{error}</div>}
+        {msg && <div style={styles.success}>{msg}</div>}
 
-        <form onSubmit={handleSubmit} style={styles.form}>
+        <form onSubmit={step === 3 ? handleVerifyOTP : handleSubmit} style={styles.form}>
           {step === 1 && (
             <>
               <h3 style={styles.sectionTitle}>Basic Information</h3>
@@ -142,12 +196,41 @@ export default function Register() {
                 </>
               )}
 
-              <div style={{ display: "flex", gap: 10 }}>
+              <div style={{ display: "flex", gap: 10, marginTop: 15 }}>
                 <button type="button" style={{ ...styles.btn, background: "#888", flex: 1 }} onClick={() => setStep(1)}>← Back</button>
                 <button type="submit" style={{ ...styles.btn, flex: 2, opacity: loading ? 0.7 : 1 }} disabled={loading}>
-                  {loading ? "Registering..." : "Register ✓"}
+                  {loading ? "Registering..." : "Send OTP ✓"}
                 </button>
               </div>
+            </>
+          )}
+
+          {step === 3 && (
+            <>
+              <h3 style={styles.sectionTitle}>Verify Email</h3>
+              <p style={{ fontSize: 13, color: "#666", marginBottom: 15 }}>
+                We sent a 6-digit code to <b>{form.email}</b>.
+              </p>
+              <div>
+                <label style={styles.label}>Enter OTP</label>
+                <input 
+                  style={{ ...styles.input, textAlign: "center", letterSpacing: 4, fontSize: 18 }} 
+                  type="text" 
+                  maxLength="6" 
+                  value={otp} 
+                  onChange={(e) => setOtp(e.target.value)} 
+                  required 
+                  placeholder="123456" 
+                />
+              </div>
+              
+              <button type="submit" style={{ ...styles.btn, marginTop: 15, opacity: loading ? 0.7 : 1 }} disabled={loading}>
+                {loading ? "Verifying..." : "Verify OTP"}
+              </button>
+
+              <p style={{ textAlign: "center", marginTop: 15, fontSize: 13 }}>
+                Didn't receive the code? <span onClick={handleResendOTP} style={{ ...styles.link, cursor: "pointer", color: "#2E7D32", fontWeight: 600 }}>Resend OTP</span>
+              </p>
             </>
           )}
         </form>
@@ -166,6 +249,7 @@ const styles = {
   sub: { margin: 0, fontSize: 13, color: "#666" },
   sectionTitle: { fontSize: 15, fontWeight: 600, color: "#333", margin: "16px 0 10px" },
   error: { background: "#ffebee", color: "#c62828", padding: "10px 14px", borderRadius: 8, marginBottom: 12, fontSize: 14 },
+  success: { background: "#e8f5e9", color: "#2e7d32", padding: "10px 14px", borderRadius: 8, marginBottom: 12, fontSize: 14 },
   form: { display: "flex", flexDirection: "column", gap: 10 },
   label: { fontSize: 13, fontWeight: 500, color: "#444", display: "block", marginBottom: 4 },
   input: { width: "100%", padding: "10px 14px", border: "1.5px solid #ddd", borderRadius: 8, fontSize: 14, outline: "none", boxSizing: "border-box" },
