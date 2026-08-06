@@ -80,6 +80,10 @@ export default function Login() {
           </button>
         </form>
 
+        <p style={{...styles.footer, marginTop: 15, marginBottom: 5}}>
+          <Link to="/forgot-password" style={{...styles.link, color: "#666", fontWeight: 500}}>Forgot Password?</Link>
+        </p>
+
         <p style={styles.footer}>
           New user?{" "}
           <Link to="/register" style={styles.link}>Register here</Link>
