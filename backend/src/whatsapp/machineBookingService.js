@@ -1,4 +1,4 @@
-const MachineBooking = require("./models/Machinebooking");
+const MachineBooking = require("../models/Machinebooking");
 
 async function createMachineBookingRequest({ phoneNumber, machineType, requestedDate }) {
   const booking = await MachineBooking.create({

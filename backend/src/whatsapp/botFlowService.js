@@ -1,9 +1,9 @@
-const WhatsAppSession = require("./Whatsappsession");
-const wa = require("./Whatsappservice");
-const strings = require("./Botstrings");
-const cropPriceLookup = require("./Croppricelookupservice");
-const diseaseDetection = require("./Diseasedetectionservice");
-const machineBooking = require("./Machinebookingservice ");
+const WhatsAppSession = require("../models/WhatsappSession");
+const wa = require("./whatsappService");
+const strings = require("./botStrings");
+const cropPriceLookup = require("./cropPriceLookupService");
+const diseaseDetection = require("./diseaseDetectionService");
+const machineBooking = require("./machineBookingService");
 
 const { getLatestPrice } = cropPriceLookup;
 const { queueDiseaseDetection } = diseaseDetection;

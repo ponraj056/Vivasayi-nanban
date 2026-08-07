@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
 
 const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
-const whatsappRoutes = require("./Whatsapproutes");
+const whatsappRoutes = require("./whatsapp/whatsappRoutes");
 const machineRoutes = require("./routes/machineRoutes");
 // const cropPriceRoutes = require("./routes/cropPriceRoutes");
 const diseaseRoutes = require("./routes/diseaseRoutes");
