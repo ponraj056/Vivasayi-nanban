@@ -7,32 +7,36 @@ This service is the AI/ML module for Vivasayi Nanban, a farmer advisory platform
 - **Model:** YOLOv8n-cls (YOLOv8 Nano, classification variant)
 - **Framework:** Ultralytics YOLOv8
 - **Input size:** 224x224 pixels
-- **Parameters:** ~1.4 million
+- **Parameters:** ~1.45 million
 - **Training platform:** Google Colab (Tesla T4 GPU)
 
 ## Dataset
-- **Crops covered:** Paddy, Tomato
-- **Classes (6 total):**
+- **Crops covered:** Paddy, Tomato, Sugarcane, Groundnut
+- **Classes (12 total):**
   - Paddy: Bacterial Leaf Blight, Brown Spot, Leaf Smut
   - Tomato: Early Blight, Late Blight, Leaf Mold
+  - Sugarcane: Red Rot, Rust, Mosaic
+  - Groundnut: Early Leaf Spot, Late Leaf Spot, Rust
 - **Sources:**
   - Paddy: [Rice Leaf Disease Dataset](https://www.kaggle.com/datasets/vbookshelf/rice-leaf-diseases) (Kaggle)
   - Tomato: [PlantVillage Dataset](https://www.kaggle.com/datasets/emmarex/plantdisease) (Kaggle)
-- **Total images:** 3,981 (3,184 train / 397 validation / 400 test)
+  - Sugarcane: [Sugarcane Leaf Disease Dataset](https://www.kaggle.com/datasets/nirmalsankalana/sugarcane-leaf-disease-dataset) (Kaggle)
+  - Groundnut: [Groundnut Plant Leaf Data](https://www.kaggle.com/datasets/warcoder/groundnut-plant-leaf-data) (Kaggle)
+- **Total images:** ~11,547 (8,596 train / 1,466 validation / 1,485 test)
 - **Split ratio:** 80% train / 10% validation / 10% test
 
 ## Training Details
 - **Epochs:** 30
 - **Batch size:** 32
 - **Augmentation:** Enabled (random flips, HSV jitter, etc.)
+- **Training time:** ~32 minutes on Tesla T4 GPU
 
 ## Accuracy Metrics
-- **Top-1 Accuracy:** 99.2%
+- **Top-1 Accuracy:** 99.5%
 - **Top-5 Accuracy:** 100%
-- **Training time:** ~10.5 minutes on Tesla T4 GPU
 
 ### Known Limitation
-Paddy classes have significantly fewer training images (40 per class) compared to tomato classes (900–1900 per class). This class imbalance can bias predictions toward tomato classes on real-world/unseen images, even when test-set accuracy is high. Future improvement: collect more paddy images and retrain with balanced classes.
+Paddy classes have significantly fewer training images (40 per class) compared to other crops (450–1900+ per class). This class imbalance can bias predictions on real-world/unseen images, even when test-set accuracy is high. Future improvement: collect more paddy images and retrain with balanced classes.
 
 ## API Endpoints
 
@@ -52,11 +56,11 @@ Accepts an image file and returns disease prediction with treatment recommendati
 **Response:**
 ```json
 {
-  "disease": "tomato_late_blight",
-  "confidence": 0.9979,
-  "crop": "tomato",
-  "recommendation_en": "Apply fungicide with Metalaxyl or Copper oxychloride immediately...",
-  "recommendation_ta": "உடனடியாக மெட்டாலாக்சில் அல்லது காப்பர்..."
+  "disease": "groundnut_late_leaf_spot",
+  "confidence": 0.6034,
+  "crop": "groundnut",
+  "recommendation_en": "Apply fungicide spray at early symptom stage for best results...",
+  "recommendation_ta": "நோய் ஆரம்ப கட்டத்திலேயே பூஞ்சைக் கொல்லியை தெளிக்கவும்..."
 }
 ```
 
