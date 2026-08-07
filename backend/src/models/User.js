@@ -18,9 +18,10 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["farmer", "dealer", "machineOwner", "admin"],
+      enum: ["farmer", "dealer", "agri_agency", "machine_owner", "agri_officer", "admin"],
       required: true,
     },
+    preferredLanguage: { type: String, default: "Tamil" },
     isActive: { type: Boolean, default: true },
     isVerified: { type: Boolean, default: false },
     otp: { type: String, default: null },

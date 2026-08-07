@@ -21,8 +21,8 @@ const machineBookingSchema = new mongoose.Schema(
     requestedDate: { type: String, required: true },
     status: {
       type: String,
-      enum: ["PENDING", "APPROVED", "REJECTED", "COMPLETED"],
-      default: "PENDING",
+      enum: ["pending", "accepted", "rejected", "completed", "PENDING", "APPROVED", "REJECTED", "COMPLETED"],
+      default: "pending",
     },
     machineOwner: {
       type: mongoose.Schema.Types.ObjectId,

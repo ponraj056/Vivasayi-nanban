@@ -77,7 +77,18 @@ export default function Register() {
       setLocLoading((l) => ({ ...l, vill: true }));
       try {
         const { data } = await axios.get(`http://127.0.0.1:5000/api/locations/villages?district=${form.farmerProfile.district}&taluk=${form.farmerProfile.taluk}`);
-        if (data.success) setVillages(data.villages);
+        if (data.success) {
+          const grouped = data.villages.reduce((acc, curr) => {
+            if (!acc[curr.village]) acc[curr.village] = new Set();
+            acc[curr.village].add(curr.pincode);
+            return acc;
+          }, {});
+          const uniqueVillages = Object.keys(grouped).map(v => ({
+            village: v,
+            pincodes: Array.from(grouped[v])
+          }));
+          setVillages(uniqueVillages);
+        }
       } catch (err) {
         console.error("Failed to load villages", err);
       } finally {
@@ -112,7 +123,11 @@ export default function Register() {
   const handleVillageChange = (selectedOption) => {
     setForm((f) => ({
       ...f,
-      farmerProfile: { ...f.farmerProfile, village: selectedOption ? selectedOption.value : "", pincode: selectedOption ? selectedOption.pincode : "" }
+      farmerProfile: { 
+        ...f.farmerProfile, 
+        village: selectedOption ? selectedOption.value : "", 
+        pincode: selectedOption && selectedOption.pincodes.length === 1 ? selectedOption.pincodes[0] : "" 
+      }
     }));
   };
 
@@ -123,8 +138,8 @@ export default function Register() {
     // Validation for location
     if (form.role === "farmer" && useFarmLocation) {
       const p = form.farmerProfile;
-      if (!p.district || !p.taluk || !p.village) {
-        setError("Please complete your farm location selection (District, Taluk, Village).");
+      if (!p.district || !p.taluk || !p.village || !p.pincode) {
+        setError("Please complete your farm location selection (District, Taluk, Village, Pincode).");
         return;
       }
     }
@@ -293,7 +308,7 @@ export default function Register() {
                         <Select
                           isDisabled={!form.farmerProfile.taluk}
                           isLoading={locLoading.vill}
-                          options={villages.map(v => ({ value: v.village, label: v.village, pincode: v.pincode }))}
+                          options={villages.map(v => ({ value: v.village, label: v.village, pincodes: v.pincodes }))}
                           value={form.farmerProfile.village ? { value: form.farmerProfile.village, label: form.farmerProfile.village } : null}
                           onChange={handleVillageChange}
                           placeholder="Select Village..."
@@ -301,10 +316,34 @@ export default function Register() {
                         />
                       </div>
 
-                      <div>
-                        <label style={styles.label}>Pincode</label>
-                        <input style={{...styles.input, background: "#f0f0f0", color: "#666"}} value={form.farmerProfile.pincode} readOnly placeholder="Auto-filled" />
-                      </div>
+                      {(() => {
+                        const selectedVillageObj = villages.find(v => v.village === form.farmerProfile.village);
+                        const availablePincodes = selectedVillageObj ? selectedVillageObj.pincodes : [];
+                        return (
+                          <div>
+                            <label style={styles.label}>Pincode {useFarmLocation && <span style={{color:"red"}}>*</span>}</label>
+                            {availablePincodes.length > 1 ? (
+                              <select 
+                                style={styles.input} 
+                                value={form.farmerProfile.pincode} 
+                                onChange={(e) => setProfile("farmer", "pincode", e.target.value)}
+                                required={useFarmLocation}
+                              >
+                                <option value="">Select Pincode</option>
+                                {availablePincodes.map(p => <option key={p} value={p}>{p}</option>)}
+                              </select>
+                            ) : (
+                              <input 
+                                style={styles.input} 
+                                value={form.farmerProfile.pincode} 
+                                onChange={(e) => setProfile("farmer", "pincode", e.target.value)} 
+                                placeholder="Enter Pincode"
+                                required={useFarmLocation}
+                              />
+                            )}
+                          </div>
+                        );
+                      })()}
 
                     </div>
                   )}

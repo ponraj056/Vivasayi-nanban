@@ -2,20 +2,61 @@ require("dotenv").config({ path: __dirname + "/../.env" });
 const mongoose = require("mongoose");
 const Location = require("../src/models/Location");
 
-const seedData = [
-  // Karur District
-  { district: "Karur", taluk: "Karur", village: "Thanthoni", pincode: "639006" },
-  { district: "Karur", taluk: "Karur", village: "Vangal", pincode: "639116" },
-  { district: "Karur", taluk: "Aravakurichi", village: "Pallapatti", pincode: "639205" },
-  
-  // Dindigul District
-  { district: "Dindigul", taluk: "Dindigul West", village: "Sinthalavadampatti", pincode: "624002" },
-  { district: "Dindigul", taluk: "Palani", village: "Ayakudi", pincode: "624613" },
-  { district: "Dindigul", taluk: "Palani", village: "Balasamudram", pincode: "624610" },
-
-  // Coimbatore District
-  { district: "Coimbatore", taluk: "Coimbatore North", village: "Thudiyalur", pincode: "641034" },
-  { district: "Coimbatore", taluk: "Pollachi", village: "Kottur", pincode: "642114" },
+const seedDataNested = [
+  {
+    "district": "Karur",
+    "taluks": [
+      {
+        "taluk": "Karur",
+        "villages": [
+          { "village": "Thanthoni", "pincode": "639006" },
+          { "village": "Vangal", "pincode": "639116" }
+        ]
+      },
+      {
+        "taluk": "Aravakurichi",
+        "villages": [
+          { "village": "Pallapatti", "pincode": "639205" }
+        ]
+      }
+    ]
+  },
+  {
+    "district": "Dindigul",
+    "taluks": [
+      {
+        "taluk": "Dindigul West",
+        "villages": [
+          { "village": "Sinthalavadampatti", "pincode": "624002" }
+        ]
+      },
+      {
+        "taluk": "Palani",
+        "villages": [
+          { "village": "Ayakudi", "pincode": "624613" },
+          { "village": "Balasamudram", "pincode": "624610" }
+        ]
+      }
+    ]
+  },
+  {
+    "district": "Coimbatore",
+    "taluks": [
+      {
+        "taluk": "Coimbatore North",
+        "villages": [
+          { "village": "Thudiyalur", "pincode": "641034" },
+          { "village": "Thudiyalur", "pincode": "641029" } // Test multiple pincodes
+        ]
+      },
+      {
+        "taluk": "Pollachi",
+        "villages": [
+          { "village": "Kottur", "pincode": "642114" }
+        ]
+      }
+    ]
+  }
 ];
 
 const seedLocations = async () => {
@@ -26,10 +67,24 @@ const seedLocations = async () => {
     console.log("Clearing existing locations...");
     await Location.deleteMany();
 
-    console.log("Inserting seed data...");
-    await Location.insertMany(seedData);
+    console.log("Parsing and inserting seed data...");
+    const flatData = [];
+    seedDataNested.forEach(d => {
+      d.taluks.forEach(t => {
+        t.villages.forEach(v => {
+          flatData.push({
+            district: d.district,
+            taluk: t.taluk,
+            village: v.village,
+            pincode: v.pincode
+          });
+        });
+      });
+    });
 
-    console.log("Location seed completed successfully!");
+    await Location.insertMany(flatData);
+
+    console.log(`Successfully seeded ${flatData.length} locations!`);
     process.exit();
   } catch (err) {
     console.error("Error seeding locations:", err);
