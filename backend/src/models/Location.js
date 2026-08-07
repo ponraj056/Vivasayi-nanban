@@ -7,7 +7,7 @@ const locationSchema = new mongoose.Schema(
     village: { type: String, required: true },
     pincode: { type: String, required: true },
   },
-  { timestamps: true }
+  { timestamps: true, collection: "tn_locations" }
 );
 
 module.exports = mongoose.model("Location", locationSchema);
