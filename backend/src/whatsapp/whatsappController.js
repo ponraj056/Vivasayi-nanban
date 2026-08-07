@@ -1,6 +1,6 @@
-const { handleIncomingMessage } = require("./Botflowservice");
-const WhatsAppMessageLog = require("./Whatsappmessagelog ");
-const wa = require("./Whatsappservice");
+const { handleIncomingMessage } = require("./botFlowService");
+const WhatsAppMessageLog = require("../models/WhatsappMessageLog");
+const wa = require("./whatsappService");
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
 

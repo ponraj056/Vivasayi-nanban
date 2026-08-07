@@ -10,6 +10,7 @@ import AdminPanel from "./pages/admin/AdminPanel";
 import DiseaseCheck from "./pages/DiseaseCheck";
 import Marketplace from "./pages/Marketplace";
 import DealerProducts from "./pages/DealerProducts";
+import Layout from "./components/Layout";
 
 export default function App() {
   return (
@@ -25,7 +26,9 @@ export default function App() {
             path="/dashboard/:role"
             element={
               <ProtectedRoute>
-                <Dashboard />
+                <Layout>
+                  <Dashboard />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -33,7 +36,9 @@ export default function App() {
             path="/admin-panel"
             element={
               <ProtectedRoute allowedRoles={["admin"]}>
-                <AdminPanel />
+                <Layout>
+                  <AdminPanel />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -41,7 +46,9 @@ export default function App() {
             path="/dashboard/farmer/disease-check"
             element={
               <ProtectedRoute allowedRoles={["farmer"]}>
-                <DiseaseCheck />
+                <Layout>
+                  <DiseaseCheck />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -49,7 +56,9 @@ export default function App() {
             path="/dashboard/farmer/marketplace"
             element={
               <ProtectedRoute allowedRoles={["farmer"]}>
-                <Marketplace />
+                <Layout>
+                  <Marketplace />
+                </Layout>
               </ProtectedRoute>
             }
           />
@@ -57,7 +66,9 @@ export default function App() {
             path="/dashboard/agri_agency/products"
             element={
               <ProtectedRoute allowedRoles={["agri_agency"]}>
-                <DealerProducts />
+                <Layout>
+                  <DealerProducts />
+                </Layout>
               </ProtectedRoute>
             }
           />

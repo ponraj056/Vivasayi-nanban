@@ -1,6 +1,6 @@
 const User = require("../models/User");
-const WhatsAppSession = require("../Whatsappsession");
-const WhatsAppMessageLog = require("../Whatsappmessagelog ");
+const WhatsAppSession = require("../models/WhatsappSession");
+const WhatsAppMessageLog = require("../models/WhatsappMessageLog");
 const MachineBooking = require("../models/Machinebooking");
 
 /**
