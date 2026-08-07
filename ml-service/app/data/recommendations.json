@@ -28,5 +28,35 @@
     "crop": "tomato",
     "recommendation_en": "Improve ventilation and reduce humidity around plants. Apply fungicide such as Chlorothalonil. Avoid wetting leaves while watering.",
     "recommendation_ta": "செடிகளைச் சுற்றி காற்றோட்டத்தை மேம்படுத்தி ஈரப்பதத்தை குறைக்கவும். குளோரோதலோனில் போன்ற பூஞ்சைக் கொல்லியை தெளிக்கவும். நீர் பாய்ச்சும்போது இலைகள் நனையாமல் பார்த்துக்கொள்ளவும்."
+  },
+  "sugarcane_red_rot": {
+    "crop": "sugarcane",
+    "recommendation_en": "Uproot and burn infected canes immediately to prevent spread. Use disease-free, resistant seed varieties for planting. Avoid waterlogging in the field.",
+    "recommendation_ta": "பரவாமல் இருக்க பாதிக்கப்பட்ட கரும்புகளை உடனடியாக பிடுங்கி எரிக்கவும். நோய் இல்லாத, எதிர்ப்பு சக்தி கொண்ட விதை வகைகளை நடவு செய்யவும். வயலில் தண்ணீர் தேங்குவதை தவிர்க்கவும்."
+  },
+  "sugarcane_rust": {
+    "crop": "sugarcane",
+    "recommendation_en": "Apply fungicide such as Propiconazole or Mancozeb. Use resistant varieties in future planting. Ensure balanced nitrogen fertilization.",
+    "recommendation_ta": "புரோபிகோனசோல் அல்லது மான்கோசெப் போன்ற பூஞ்சைக் கொல்லியை தெளிக்கவும். எதிர்கால நடவுக்கு எதிர்ப்பு சக்தி கொண்ட வகைகளை பயன்படுத்தவும். சமச்சீர் நைட்ரஜன் உரமிடவும்."
+  },
+  "sugarcane_mosaic": {
+    "crop": "sugarcane",
+    "recommendation_en": "Remove and destroy infected plants to prevent viral spread. Control aphid population, as they spread the virus. Use virus-free planting material.",
+    "recommendation_ta": "வைரஸ் பரவாமல் இருக்க பாதிக்கப்பட்ட செடிகளை அகற்றி அழிக்கவும். வைரஸை பரப்பும் இலை பேன் பூச்சிகளை கட்டுப்படுத்தவும். வைரஸ் இல்லாத நடவு பொருளைப் பயன்படுத்தவும்."
+  },
+  "groundnut_early_leaf_spot": {
+    "crop": "groundnut",
+    "recommendation_en": "Apply fungicide such as Chlorothalonil or Carbendazim. Remove and destroy infected leaves. Practice crop rotation with non-host crops.",
+    "recommendation_ta": "குளோரோதலோனில் அல்லது கார்பென்டசிம் போன்ற பூஞ்சைக் கொல்லியை தெளிக்கவும். பாதிக்கப்பட்ட இலைகளை அகற்றி அழிக்கவும். பயிர் சுழற்சி முறையை பின்பற்றவும்."
+  },
+  "groundnut_late_leaf_spot": {
+    "crop": "groundnut",
+    "recommendation_en": "Apply fungicide spray at early symptom stage for best results. Remove crop debris after harvest to reduce spore survival. Use resistant varieties if available.",
+    "recommendation_ta": "நோய் ஆரம்ப கட்டத்திலேயே பூஞ்சைக் கொல்லியை தெளிக்கவும். அறுவடைக்குப் பிறகு பயிர் எச்சங்களை அகற்றவும். கிடைத்தால் எதிர்ப்பு சக்தி கொண்ட வகைகளை பயன்படுத்தவும்."
+  },
+  "groundnut_rust": {
+    "crop": "groundnut",
+    "recommendation_en": "Apply fungicide such as Hexaconazole or Mancozeb. Avoid dense planting to improve air circulation. Monitor field regularly during humid weather.",
+    "recommendation_ta": "ஹெக்ஸகோனசோல் அல்லது மான்கோசெப் போன்ற பூஞ்சைக் கொல்லியை தெளிக்கவும். காற்றோட்டத்திற்காக அடர்த்தியான நடவை தவிர்க்கவும். ஈரப்பதமான காலநிலையில் வயலை தொடர்ந்து கண்காணிக்கவும்."
   }
 }
