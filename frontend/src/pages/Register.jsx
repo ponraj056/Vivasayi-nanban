@@ -5,7 +5,7 @@ import Select from "react-select";
 
 const ROLES = [
   { value: "farmer", label: "விவசாயி (Farmer)", icon: "🌾", color: "#2E7D32" },
-  { value: "dealer", label: "கடை உரிமையாளர் (Dealer)", icon: "🏪", color: "#1565C0" },
+  { value: "agri_agency", label: "கடை உரிமையாளர் (Agri-Agency)", icon: "🏪", color: "#1565C0" },
   { value: "machine_owner", label: "இயந்திர உரிமையாளர் (Machine Owner)", icon: "🚜", color: "#E65100" },
 ];
 
@@ -20,7 +20,7 @@ export default function Register() {
   const [form, setForm] = useState({
     name: "", email: "", phone: "", password: "", role: "",
     farmerProfile: { location: "", district: "", taluk: "", village: "", pincode: "", landSize: "", crops: "" },
-    dealerProfile: { shopName: "", address: "", district: "", pincode: "" },
+    agriAgencyProfile: { shopName: "", address: "", district: "", pincode: "" },
     machineOwnerProfile: { district: "", serviceRadius: "" },
   });
 
@@ -100,7 +100,7 @@ export default function Register() {
 
   const set = (field, val) => setForm((f) => ({ ...f, [field]: val }));
   const setProfile = (role, field, val) => {
-    const key = role === "machine_owner" ? "machineOwnerProfile" : `${role}Profile`;
+    const key = role === "machine_owner" ? "machineOwnerProfile" : role === "agri_agency" ? "agriAgencyProfile" : `${role}Profile`;
     setForm((f) => ({ ...f, [key]: { ...f[key], [field]: val } }));
   };
 
@@ -157,7 +157,7 @@ export default function Register() {
           crops: form.farmerProfile.crops ? form.farmerProfile.crops.split(",").map((c) => c.trim()).filter(Boolean) : [],
         };
       }
-      if (form.role === "dealer") payload.dealerProfile = form.dealerProfile;
+      if (form.role === "agri_agency") payload.agriAgencyProfile = form.agriAgencyProfile;
       if (form.role === "machine_owner") {
         payload.machineOwnerProfile = {
           ...form.machineOwnerProfile,
@@ -359,12 +359,12 @@ export default function Register() {
                 </>
               )}
 
-              {form.role === "dealer" && (
+              {form.role === "agri_agency" && (
                 <>
                   {[["shopName","Shop Name"],["address","Address"],["district","District"],["pincode","Pincode"]].map(([field, label]) => (
                     <div key={field}>
                       <label style={styles.label}>{label}</label>
-                      <input style={styles.input} value={form.dealerProfile[field]} onChange={(e) => setProfile("dealer", field, e.target.value)} />
+                      <input style={styles.input} value={form.agriAgencyProfile[field]} onChange={(e) => setProfile("agri_agency", field, e.target.value)} />
                     </div>
                   ))}
                 </>

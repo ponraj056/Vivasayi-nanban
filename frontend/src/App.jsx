@@ -32,7 +32,7 @@ export default function App() {
           <Route
             path="/admin-panel"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["admin"]}>
                 <AdminPanel />
               </ProtectedRoute>
             }
@@ -40,7 +40,7 @@ export default function App() {
           <Route
             path="/dashboard/farmer/disease-check"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["farmer"]}>
                 <DiseaseCheck />
               </ProtectedRoute>
             }
@@ -48,15 +48,15 @@ export default function App() {
           <Route
             path="/dashboard/farmer/marketplace"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["farmer"]}>
                 <Marketplace />
               </ProtectedRoute>
             }
           />
           <Route
-            path="/dashboard/dealer/products"
+            path="/dashboard/agri_agency/products"
             element={
-              <ProtectedRoute>
+              <ProtectedRoute allowedRoles={["agri_agency"]}>
                 <DealerProducts />
               </ProtectedRoute>
             }

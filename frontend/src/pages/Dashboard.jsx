@@ -49,11 +49,11 @@ const FarmerDashboard = ({ user }) => (
   </div>
 );
 
-// --- DEALER DASHBOARD ---
-const DealerDashboard = ({ user }) => (
+// --- AGRI-AGENCY DASHBOARD ---
+const AgriAgencyDashboard = ({ user }) => (
   <div>
     <h2 style={{ color: "#1565C0", marginBottom: 4 }}>வணக்கம், {user.name}! 🏪</h2>
-    <p style={{ color: "#888", fontSize: 14, marginBottom: 20 }}>Dealer Dashboard — {user.dealerProfile?.shopName || "Your Shop"}</p>
+    <p style={{ color: "#888", fontSize: 14, marginBottom: 20 }}>Agri-Agency Dashboard — {user.agriAgencyProfile?.shopName || "Your Shop"}</p>
 
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
       <StatCard icon="📦" label="Products Listed" value="0" color="#1565C0" />
@@ -64,7 +64,7 @@ const DealerDashboard = ({ user }) => (
 
     <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Quick Actions</h3>
     <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
-      <ActionBtn icon="➕" label="Add Product" color="#1565C0" onClick={() => window.location.href = '/dashboard/dealer/products'} />
+      <ActionBtn icon="➕" label="Add Product" color="#1565C0" onClick={() => window.location.href = '/dashboard/agri_agency/products'} />
       <ActionBtn icon="📋" label="View Orders" color="#2E7D32" />
       <ActionBtn icon="📦" label="Update Stock" color="#E65100" />
       <ActionBtn icon="📊" label="Sales Report" color="#6A1B9A" />
@@ -132,9 +132,31 @@ const AdminDashboard = ({ user }) => (
   </div>
 );
 
+// --- AGRI-OFFICER DASHBOARD ---
+const AgriOfficerDashboard = ({ user }) => (
+  <div>
+    <h2 style={{ color: "#0277bd", marginBottom: 4 }}>வணக்கம், {user.name}! 👮</h2>
+    <p style={{ color: "#888", fontSize: 14, marginBottom: 20 }}>Agri-Officer Dashboard — District Analytics</p>
+
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
+      <StatCard icon="👨‍🌾" label="Farmers in District" value="0" color="#2E7D32" />
+      <StatCard icon="🎫" label="Open Tickets" value="0" color="#c62828" />
+      <StatCard icon="📸" label="Disease Reports" value="0" color="#E65100" />
+      <StatCard icon="✅" label="Tickets Resolved" value="0" color="#1565C0" />
+    </div>
+
+    <h3 style={{ fontSize: 15, fontWeight: 600, marginBottom: 12 }}>Quick Actions</h3>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginBottom: 24 }}>
+      <ActionBtn icon="🎫" label="View Tickets" color="#0277bd" />
+      <ActionBtn icon="📸" label="Disease Analytics" color="#E65100" />
+      <ActionBtn icon="📢" label="Send Broadcast" color="#6A1B9A" />
+    </div>
+  </div>
+);
+
 // --- MAIN DASHBOARD ROUTER ---
-const DASH_MAP = { farmer: FarmerDashboard, dealer: DealerDashboard, machine_owner: MachineOwnerDashboard, admin: AdminDashboard };
-const ROLE_COLORS = { farmer: "#2E7D32", dealer: "#1565C0", machine_owner: "#E65100", admin: "#6A1B9A" };
+const DASH_MAP = { farmer: FarmerDashboard, agri_agency: AgriAgencyDashboard, machine_owner: MachineOwnerDashboard, agri_officer: AgriOfficerDashboard, admin: AdminDashboard };
+const ROLE_COLORS = { farmer: "#2E7D32", agri_agency: "#1565C0", machine_owner: "#E65100", agri_officer: "#0277bd", admin: "#6A1B9A" };
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
