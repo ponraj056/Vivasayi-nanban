@@ -10,6 +10,9 @@ import AdminPanel from "./pages/admin/AdminPanel";
 import DiseaseCheck from "./pages/DiseaseCheck";
 import Marketplace from "./pages/Marketplace";
 import DealerProducts from "./pages/DealerProducts";
+import RentMachine from "./pages/farmer/RentMachine";
+import MachineList from "./pages/machine_owner/MachineList";
+import MachineBookings from "./pages/machine_owner/MachineBookings";
 import Layout from "./components/Layout";
 
 export default function App() {
@@ -68,6 +71,36 @@ export default function App() {
               <ProtectedRoute allowedRoles={["agri_agency"]}>
                 <Layout>
                   <DealerProducts />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/farmer/rent-machine"
+            element={
+              <ProtectedRoute allowedRoles={["farmer"]}>
+                <Layout>
+                  <RentMachine />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/machine_owner/machines"
+            element={
+              <ProtectedRoute allowedRoles={["machine_owner"]}>
+                <Layout>
+                  <MachineList />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/machine_owner/bookings"
+            element={
+              <ProtectedRoute allowedRoles={["machine_owner"]}>
+                <Layout>
+                  <MachineBookings />
                 </Layout>
               </ProtectedRoute>
             }
