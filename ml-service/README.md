@@ -35,8 +35,9 @@ This service is the AI/ML module for Vivasayi Nanban, a farmer advisory platform
 - **Top-1 Accuracy:** 99.5%
 - **Top-5 Accuracy:** 100%
 
-### Known Limitation
-Paddy classes have significantly fewer training images (40 per class) compared to other crops (450–1900+ per class). This class imbalance can bias predictions on real-world/unseen images, even when test-set accuracy is high. Future improvement: collect more paddy images and retrain with balanced classes.
+### Known Limitations
+1. Paddy classes have significantly fewer training images (40 per class) compared to other crops (450–1900+ per class). This class imbalance can bias predictions on real-world/unseen images, even when test-set accuracy is high.
+2. The model is a pure classifier — it was never trained on "non-leaf" images (faces, random objects), so it always outputs one of its 12 known classes with some confidence, even for unrelated photos. A confidence threshold (0.70) is used to reject low-confidence predictions as "unknown," but this is a partial mitigation, not a guarantee: some non-leaf images can still receive high confidence scores, and some genuine leaf images (e.g., unfamiliar angles/varieties) can fall below the threshold. A proper fix would require training a dedicated "leaf vs. non-leaf" binary classifier on a diverse negative dataset.
 
 ## API Endpoints
 
@@ -79,3 +80,22 @@ Accepts an image file and returns disease prediction with treatment recommendati
 **Note:** Free tier instances sleep after 15 minutes of inactivity. The first request after sleep may take 50+ seconds to respond while the instance wakes up.
 
 ## Project Structure
+
+## Local Setup
+```bash
+cd ml-service
+python -m venv venv
+venv\Scripts\activate       # Windows
+pip install -r requirements.txt
+cd app
+uvicorn main:app --reload
+```
+Server runs at `http://127.0.0.1:8000`. Interactive API docs at `http://127.0.0.1:8000/docs`.
+
+## Future Improvements
+- Collect more paddy images and retrain with balanced classes
+- Add a dedicated leaf-detection pre-filter (binary classifier: leaf vs. non-leaf) for more robust rejection of unrelated images
+- Add more crops (Chilli, Maize, Cotton — candidate crops for next iteration)
+- Add more disease classes per crop
+- Collect real field images (current data is largely lab/studio-quality) to improve real-world accuracy
+
