@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const User = require('./models/User'); // Assuming you have a User model
+const prisma = require('./config/prisma'); // Using Prisma client
 // const wa = require('./whatsappService');
 // const cropPriceLookup = require('./Croppricelookupservice');
 
