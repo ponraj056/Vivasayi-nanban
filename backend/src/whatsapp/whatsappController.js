@@ -1,5 +1,5 @@
 const { handleIncomingMessage } = require("./botFlowService");
-const WhatsAppMessageLog = require("../models/WhatsappMessageLog");
+const prisma = require("../config/prisma");
 const wa = require("./whatsappService");
 
 const VERIFY_TOKEN = process.env.WHATSAPP_VERIFY_TOKEN;
@@ -44,14 +44,16 @@ async function receiveWebhook(req, res) {
 
     const parsed = parseMessage(waMessage);
 
-    await WhatsAppMessageLog.create({
-      phoneNumber,
-      direction: "INBOUND",
-      messageType: parsed.type,
-      content: parsed.text || null,
-      mediaId: parsed.mediaId || null,
-      waMessageId: waMessage.id,
-      status: "received",
+    await prisma.whatsAppMessageLog.create({
+      data: {
+        phoneNumber,
+        direction: "INBOUND",
+        messageType: parsed.type,
+        content: parsed.text || null,
+        mediaId: parsed.mediaId || null,
+        waMessageId: waMessage.id,
+        status: "received",
+      }
     });
 
     await wa.markAsRead(waMessage.id).catch(() => {});

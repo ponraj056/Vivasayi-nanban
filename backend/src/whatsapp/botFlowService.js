@@ -1,4 +1,4 @@
-const WhatsAppSession = require("../models/WhatsappSession");
+const prisma = require("../config/prisma");
 const wa = require("./whatsappService");
 const strings = require("./botStrings");
 const cropPriceLookup = require("./cropPriceLookupService");
@@ -13,24 +13,34 @@ const { createMachineBookingRequest } = machineBooking;
  * Fetch or create a session for a phone number.
  */
 async function getOrCreateSession(phoneNumber) {
-  let session = await WhatsAppSession.findOne({ phoneNumber });
+  let session = await prisma.whatsappSession.findUnique({ where: { farmerPhone: phoneNumber } });
   if (!session) {
-    session = await WhatsAppSession.create({ phoneNumber });
+    session = await prisma.whatsappSession.create({ data: { farmerPhone: phoneNumber } });
   }
   return session;
 }
 
 async function setFlow(session, flow, contextPatch = {}) {
-  session.currentFlow = flow;
-  session.context = { ...session.context, ...contextPatch };
-  session.lastMessageAt = new Date();
-  await session.save();
+  const currentContext = typeof session.contextData === 'object' && session.contextData !== null ? session.contextData : {};
+  const updatedContext = { ...currentContext, ...contextPatch };
+  
+  await prisma.whatsappSession.update({
+    where: { id: session.id },
+    data: {
+      currentStep: flow,
+      contextData: updatedContext,
+      updatedAt: new Date()
+    }
+  });
+  
+  session.currentStep = flow;
+  session.contextData = updatedContext;
 }
 
 async function sendMainMenu(session) {
-  const lang = session.language;
+  const lang = session.language || "ta";
   await wa.sendButtons(
-    session.phoneNumber,
+    session.farmerPhone,
     strings.welcome[lang],
     strings.mainMenuButtons[lang]
   );
@@ -51,7 +61,8 @@ async function handleIncomingMessage(phoneNumber, message) {
     return sendMainMenu(session);
   }
 
-  switch (session.currentFlow) {
+  switch (session.currentStep) {
+    case "main_menu":
     case "IDLE":
       return sendMainMenu(session);
 
@@ -76,22 +87,22 @@ async function handleIncomingMessage(phoneNumber, message) {
 }
 
 async function handleMainMenuSelection(session, message) {
-  const lang = session.language;
+  const lang = session.language || "ta";
   const choice = message.interactiveId;
 
   if (choice === "MENU_PRICE") {
-    await wa.sendText(session.phoneNumber, strings.askCropForPrice[lang]);
+    await wa.sendText(session.farmerPhone, strings.askCropForPrice[lang]);
     return setFlow(session, "PRICE_QUERY_CROP");
   }
 
   if (choice === "MENU_DISEASE") {
-    await wa.sendText(session.phoneNumber, strings.askDiseaseImage[lang]);
+    await wa.sendText(session.farmerPhone, strings.askDiseaseImage[lang]);
     return setFlow(session, "DISEASE_QUERY_WAIT_IMAGE");
   }
 
   if (choice === "MENU_MACHINE") {
     await wa.sendList(
-      session.phoneNumber,
+      session.farmerPhone,
       strings.machineTypeAsk[lang],
       lang === "ta" ? "தேர்வு செய்ய" : "Select",
       strings.machineTypeRows[lang]
@@ -99,43 +110,44 @@ async function handleMainMenuSelection(session, message) {
     return setFlow(session, "MACHINE_BOOKING_TYPE");
   }
 
-  await wa.sendText(session.phoneNumber, strings.invalidInput[lang]);
+  await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
   return sendMainMenu(session);
 }
 
 async function handlePriceQuery(session, message) {
-  const lang = session.language;
+  const lang = session.language || "ta";
   const cropName = (message.text || "").trim();
 
-  const priceInfo = await getLatestPrice(cropName, session.context.district);
+  const contextData = typeof session.contextData === 'object' && session.contextData !== null ? session.contextData : {};
+  const priceInfo = await getLatestPrice(cropName, contextData.district);
 
   if (!priceInfo) {
-    await wa.sendText(session.phoneNumber, strings.priceNotFound[lang]);
+    await wa.sendText(session.farmerPhone, strings.priceNotFound[lang]);
   } else {
     const reply =
       lang === "ta"
         ? `📊 *${cropName}* விலை\nமண்டி: ${priceInfo.market}\nமொத்த விலை: ₹${priceInfo.modalPrice}/குவிண்டால்\nநாள்: ${priceInfo.date}`
         : `📊 *${cropName}* price\nMarket: ${priceInfo.market}\nModal Price: ₹${priceInfo.modalPrice}/quintal\nDate: ${priceInfo.date}`;
-    await wa.sendText(session.phoneNumber, reply);
+    await wa.sendText(session.farmerPhone, reply);
   }
 
   return sendMainMenu(session);
 }
 
 async function handleDiseaseImage(session, message) {
-  const lang = session.language;
+  const lang = session.language || "ta";
 
   if (message.type !== "image" || !message.mediaId) {
-    await wa.sendText(session.phoneNumber, strings.invalidInput[lang]);
+    await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
     return; // stay in this flow, wait for an actual image
   }
 
-  await wa.sendText(session.phoneNumber, strings.diseaseProcessing[lang]);
+  await wa.sendText(session.farmerPhone, strings.diseaseProcessing[lang]);
 
   // Fire-and-forget: the detection service will call back via
   // whatsappService.sendText once the YOLOv8 model finishes.
   await queueDiseaseDetection({
-    phoneNumber: session.phoneNumber,
+    phoneNumber: session.farmerPhone,
     mediaId: message.mediaId,
     language: lang,
   });
@@ -144,37 +156,38 @@ async function handleDiseaseImage(session, message) {
 }
 
 async function handleMachineTypeSelection(session, message) {
-  const lang = session.language;
+  const lang = session.language || "ta";
   const choice = message.interactiveId;
 
   const validTypes = ["MACHINE_TRACTOR", "MACHINE_HARVESTER", "MACHINE_SPRAYER"];
   if (!validTypes.includes(choice)) {
-    await wa.sendText(session.phoneNumber, strings.invalidInput[lang]);
+    await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
     return;
   }
 
-  await wa.sendText(session.phoneNumber, strings.askBookingDate[lang]);
+  await wa.sendText(session.farmerPhone, strings.askBookingDate[lang]);
   return setFlow(session, "MACHINE_BOOKING_DATE", { machineType: choice });
 }
 
 async function handleMachineBookingDate(session, message) {
-  const lang = session.language;
+  const lang = session.language || "ta";
   const dateText = (message.text || "").trim();
 
   // Basic DD-MM-YYYY validation
   const match = dateText.match(/^(\d{2})-(\d{2})-(\d{4})$/);
   if (!match) {
-    await wa.sendText(session.phoneNumber, strings.invalidInput[lang]);
+    await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
     return;
   }
 
+  const contextData = typeof session.contextData === 'object' && session.contextData !== null ? session.contextData : {};
   await createMachineBookingRequest({
-    phoneNumber: session.phoneNumber,
-    machineType: session.context.machineType,
+    phoneNumber: session.farmerPhone,
+    machineType: contextData.machineType,
     requestedDate: `${match[3]}-${match[2]}-${match[1]}`, // YYYY-MM-DD
   });
 
-  await wa.sendText(session.phoneNumber, strings.bookingConfirmed[lang]);
+  await wa.sendText(session.farmerPhone, strings.bookingConfirmed[lang]);
   return sendMainMenu(session);
 }
 
