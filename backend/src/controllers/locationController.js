@@ -1,11 +1,17 @@
-const Location = require("../models/Location");
+const prisma = require("../config/prisma");
 
 // @route  GET /api/locations/districts
 // @access Public
 const getDistricts = async (req, res) => {
   try {
-    const districts = await Location.distinct("district");
-    res.status(200).json({ success: true, districts: districts.sort() });
+    const locations = await prisma.location.findMany({
+      select: { district: true },
+      distinct: ['district'],
+      orderBy: { district: 'asc' }
+    });
+    
+    const districts = locations.map(l => l.district);
+    res.status(200).json({ success: true, districts });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -18,8 +24,15 @@ const getTaluks = async (req, res) => {
     const { district } = req.query;
     if (!district) return res.status(400).json({ success: false, message: "District is required" });
 
-    const taluks = await Location.find({ district }).distinct("taluk");
-    res.status(200).json({ success: true, taluks: taluks.sort() });
+    const locations = await prisma.location.findMany({
+      where: { district },
+      select: { taluk: true },
+      distinct: ['taluk'],
+      orderBy: { taluk: 'asc' }
+    });
+    
+    const taluks = locations.map(l => l.taluk);
+    res.status(200).json({ success: true, taluks });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -32,15 +45,16 @@ const getVillages = async (req, res) => {
     const { district, taluk } = req.query;
     if (!district || !taluk) return res.status(400).json({ success: false, message: "District and taluk are required" });
 
-    const locations = await Location.find({ district, taluk }).sort({ village: 1 });
-    
-    // Return array of objects with village and pincode
-    const villages = locations.map(loc => ({
-      village: loc.village,
-      pincode: loc.pincode
-    }));
+    const locations = await prisma.location.findMany({
+      where: { district, taluk },
+      orderBy: { village: 'asc' },
+      select: {
+        village: true,
+        pincode: true
+      }
+    });
 
-    res.status(200).json({ success: true, villages });
+    res.status(200).json({ success: true, villages: locations });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }

@@ -27,8 +27,12 @@ export default function DiseaseCheck() {
     formData.append('image', file);
 
     try {
+      const token = localStorage.getItem('token') || 'dummy-token';
       const response = await fetch('http://127.0.0.1:5000/api/disease/detect', {
         method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
         body: formData,
       });
       

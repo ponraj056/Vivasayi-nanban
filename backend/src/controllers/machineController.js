@@ -1,5 +1,4 @@
-const Machine = require("../models/Machine");
-const MachineBooking = require("../models/Machinebooking");
+const prisma = require("../config/prisma");
 
 /* ---------------------------- FARMER SIDE ---------------------------- */
 
@@ -10,9 +9,15 @@ async function browseMachines(req, res) {
     if (district) filter.district = district;
     if (machineType) filter.machineType = machineType;
 
-    const machines = await Machine.find(filter)
-      .populate("owner", "name phone")
-      .sort({ createdAt: -1 });
+    const machines = await prisma.machine.findMany({
+      where: filter,
+      include: {
+        owner: {
+          select: { name: true, phone: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json({ success: true, machines });
   } catch (err) {
@@ -22,10 +27,15 @@ async function browseMachines(req, res) {
 
 async function getMachineById(req, res) {
   try {
-    const machine = await Machine.findById(req.params.id).populate(
-      "owner",
-      "name phone"
-    );
+    const machine = await prisma.machine.findUnique({
+      where: { id: req.params.id },
+      include: {
+        owner: {
+          select: { name: true, phone: true }
+        }
+      }
+    });
+
     if (!machine) {
       return res.status(404).json({ success: false, message: "Machine not found" });
     }
@@ -42,24 +52,28 @@ async function bookMachine(req, res) {
       return res.status(400).json({ success: false, message: "requestedDate is required" });
     }
 
-    const machine = await Machine.findById(req.params.id);
+    const machine = await prisma.machine.findUnique({
+      where: { id: req.params.id }
+    });
+    
     if (!machine) {
       return res.status(404).json({ success: false, message: "Machine not found" });
     }
 
     if (machine.unavailableDates.includes(requestedDate)) {
-      return res
-        .status(409)
-        .json({ success: false, message: "Machine already booked for this date" });
+      return res.status(409).json({ success: false, message: "Machine already booked for this date" });
     }
 
-    const booking = await MachineBooking.create({
-      farmer: req.user._id,
-      farmerPhone: req.user.phone || "",
-      machine: machine._id,
-      machineType: machine.machineType,
-      requestedDate,
-      source: "WEB",
+    const booking = await prisma.machineBooking.create({
+      data: {
+        farmerId: req.user.id,
+        farmerPhone: req.user.phone || "",
+        machineId: machine.id,
+        machineOwnerId: machine.ownerId,
+        machineType: machine.machineType,
+        requestedDate,
+        source: "WEB",
+      }
     });
 
     res.status(201).json({ success: true, booking });
@@ -70,9 +84,15 @@ async function bookMachine(req, res) {
 
 async function getMyBookings(req, res) {
   try {
-    const bookings = await MachineBooking.find({ farmer: req.user._id })
-      .populate("machine", "name machineType pricePerDay district")
-      .sort({ createdAt: -1 });
+    const bookings = await prisma.machineBooking.findMany({
+      where: { farmerId: req.user.id },
+      include: {
+        machine: {
+          select: { name: true, machineType: true, pricePerDay: true, district: true }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json({ success: true, bookings });
   } catch (err) {
@@ -84,18 +104,19 @@ async function getMyBookings(req, res) {
 
 async function createMachine(req, res) {
   try {
-    const { machineType, name, description, pricePerDay, district, location, photoUrl } =
-      req.body;
+    const { machineType, name, description, pricePerDay, district, location, photoUrl } = req.body;
 
-    const machine = await Machine.create({
-      owner: req.user._id,
-      machineType,
-      name,
-      description,
-      pricePerDay,
-      district,
-      location,
-      photoUrl,
+    const machine = await prisma.machine.create({
+      data: {
+        ownerId: req.user.id,
+        machineType,
+        name,
+        description: description || "",
+        pricePerDay: parseFloat(pricePerDay),
+        district,
+        location: location || "",
+        photoUrl: photoUrl || "",
+      }
     });
 
     res.status(201).json({ success: true, machine });
@@ -106,8 +127,9 @@ async function createMachine(req, res) {
 
 async function getMyMachines(req, res) {
   try {
-    const machines = await Machine.find({ owner: req.user._id }).sort({
-      createdAt: -1,
+    const machines = await prisma.machine.findMany({
+      where: { ownerId: req.user.id },
+      orderBy: { createdAt: 'desc' }
     });
     res.json({ success: true, machines });
   } catch (err) {
@@ -117,13 +139,20 @@ async function getMyMachines(req, res) {
 
 async function updateMachine(req, res) {
   try {
-    const machine = await Machine.findOne({ _id: req.params.id, owner: req.user._id });
-    if (!machine) {
+    const existing = await prisma.machine.findFirst({
+      where: { id: req.params.id, ownerId: req.user.id }
+    });
+    
+    if (!existing) {
       return res.status(404).json({ success: false, message: "Machine not found" });
     }
 
-    Object.assign(machine, req.body);
-    await machine.save();
+    const { id, ownerId, createdAt, updatedAt, ...updateData } = req.body;
+
+    const machine = await prisma.machine.update({
+      where: { id: existing.id },
+      data: updateData
+    });
 
     res.json({ success: true, machine });
   } catch (err) {
@@ -133,13 +162,14 @@ async function updateMachine(req, res) {
 
 async function getOwnerBookings(req, res) {
   try {
-    const myMachines = await Machine.find({ owner: req.user._id }).select("_id");
-    const machineIds = myMachines.map((m) => m._id);
-
-    const bookings = await MachineBooking.find({ machine: { $in: machineIds } })
-      .populate("farmer", "name phone")
-      .populate("machine", "name machineType")
-      .sort({ createdAt: -1 });
+    const bookings = await prisma.machineBooking.findMany({
+      where: { machineOwnerId: req.user.id },
+      include: {
+        farmer: { select: { name: true, phone: true } },
+        machine: { select: { name: true, machineType: true, pricePerDay: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
 
     res.json({ success: true, bookings });
   } catch (err) {
@@ -154,18 +184,31 @@ async function respondToBooking(req, res) {
       return res.status(400).json({ success: false, message: "Invalid status" });
     }
 
-    const booking = await MachineBooking.findById(req.params.id).populate("machine");
-    if (!booking || String(booking.machine.owner) !== String(req.user._id)) {
+    const existingBooking = await prisma.machineBooking.findUnique({
+      where: { id: req.params.id },
+      include: { machine: true }
+    });
+
+    if (!existingBooking || existingBooking.machineOwnerId !== req.user.id) {
       return res.status(404).json({ success: false, message: "Booking not found" });
     }
 
-    booking.status = status;
-    await booking.save();
+    const booking = await prisma.machineBooking.update({
+      where: { id: existingBooking.id },
+      data: { status }
+    });
 
     if (status === "APPROVED") {
-      await Machine.findByIdAndUpdate(booking.machine._id, {
-        $addToSet: { unavailableDates: booking.requestedDate },
-      });
+      // Add requestedDate to unavailableDates if it's not already there
+      const unavailableDates = existingBooking.machine.unavailableDates || [];
+      if (!unavailableDates.includes(existingBooking.requestedDate)) {
+        await prisma.machine.update({
+          where: { id: existingBooking.machine.id },
+          data: {
+            unavailableDates: { push: existingBooking.requestedDate }
+          }
+        });
+      }
     }
 
     res.json({ success: true, booking });

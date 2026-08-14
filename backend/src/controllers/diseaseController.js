@@ -1,6 +1,7 @@
 const axios = require('axios');
 const path = require('path');
 const fs = require('fs');
+const prisma = require('../config/prisma');
 
 // Ensure uploads directory exists
 const uploadsDir = path.join(__dirname, '../../uploads');
@@ -37,6 +38,19 @@ const detectDisease = async (req, res) => {
       };
     }
 
+    // Save report to database
+    if (req.user && req.user.role === 'farmer') {
+      await prisma.diseaseReport.create({
+        data: {
+          farmerId: req.user.id,
+          imageUrl: imagePath, // in a real app, upload to S3 and save URL
+          diseaseName: result.disease,
+          confidence: result.confidence,
+          treatmentAdvice: result.recommendation
+        }
+      });
+    }
+
     // Clean up the file after processing to save space
     fs.unlinkSync(imagePath);
 
@@ -51,4 +65,25 @@ const detectDisease = async (req, res) => {
   }
 };
 
-module.exports = { detectDisease };
+const getDiseaseReports = async (req, res) => {
+  try {
+    const reports = await prisma.diseaseReport.findMany({
+      include: {
+        farmer: {
+          select: {
+            name: true,
+            phone: true,
+            farmerProfile: { select: { district: true } }
+          }
+        }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
+
+    res.json({ success: true, reports });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { detectDisease, getDiseaseReports };

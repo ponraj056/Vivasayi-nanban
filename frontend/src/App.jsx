@@ -13,6 +13,13 @@ import DealerProducts from "./pages/DealerProducts";
 import RentMachine from "./pages/farmer/RentMachine";
 import MachineList from "./pages/machine_owner/MachineList";
 import MachineBookings from "./pages/machine_owner/MachineBookings";
+import MachineOwnerEarnings from "./pages/machine_owner/MachineOwnerEarnings";
+import OfficerTickets from "./pages/agri_officer/OfficerTickets";
+import OfficerAnalytics from "./pages/agri_officer/OfficerAnalytics";
+import OfficerBroadcast from "./pages/agri_officer/OfficerBroadcast";
+import AgencyOrders from "./pages/agri_agency/AgencyOrders";
+import AgencyReports from "./pages/agri_agency/AgencyReports";
+import AdminVerify from "./pages/admin/AdminVerify";
 import Layout from "./components/Layout";
 
 export default function App() {
@@ -101,6 +108,76 @@ export default function App() {
               <ProtectedRoute allowedRoles={["machine_owner"]}>
                 <Layout>
                   <MachineBookings />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/machine_owner/earnings"
+            element={
+              <ProtectedRoute allowedRoles={["machine_owner"]}>
+                <Layout>
+                  <MachineOwnerEarnings />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/agri_officer/tickets"
+            element={
+              <ProtectedRoute allowedRoles={["agri_officer"]}>
+                <Layout>
+                  <OfficerTickets />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/agri_officer/analytics"
+            element={
+              <ProtectedRoute allowedRoles={["agri_officer"]}>
+                <Layout>
+                  <OfficerAnalytics />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/agri_officer/broadcasts"
+            element={
+              <ProtectedRoute allowedRoles={["agri_officer"]}>
+                <Layout>
+                  <OfficerBroadcast />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/agri_agency/orders"
+            element={
+              <ProtectedRoute allowedRoles={["agri_agency"]}>
+                <Layout>
+                  <AgencyOrders />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/agri_agency/reports"
+            element={
+              <ProtectedRoute allowedRoles={["agri_agency"]}>
+                <Layout>
+                  <AgencyReports />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/admin/verify"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <Layout>
+                  <AdminVerify />
                 </Layout>
               </ProtectedRoute>
             }

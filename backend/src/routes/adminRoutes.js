@@ -11,6 +11,8 @@ const {
   getWhatsAppMessages,
   getBookings,
   updateBookingStatus,
+  getPendingVerifications,
+  verifyUser,
 } = require("../controllers/adminController");
 
 // Every route here requires a valid JWT AND role === "admin"
@@ -28,5 +30,8 @@ router.get("/whatsapp/messages/:phoneNumber", getWhatsAppMessages);
 
 router.get("/bookings", getBookings);
 router.patch("/bookings/:id", updateBookingStatus);
+
+router.get("/verifications", getPendingVerifications);
+router.patch("/verifications/:id/verify", verifyUser);
 
 module.exports = router;

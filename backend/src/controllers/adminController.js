@@ -1,7 +1,4 @@
-const User = require("../models/User");
-const WhatsAppSession = require("../models/WhatsappSession");
-const WhatsAppMessageLog = require("../models/WhatsappMessageLog");
-const MachineBooking = require("../models/Machinebooking");
+const prisma = require("../config/prisma");
 
 /**
  * GET /api/admin/stats
@@ -19,17 +16,21 @@ async function getOverviewStats(req, res) {
       activeSessions,
       messagesLast7Days,
     ] = await Promise.all([
-      User.countDocuments({ role: "farmer" }),
-      User.countDocuments({ role: "dealer" }),
-      User.countDocuments({ role: "machineOwner" }),
-      User.countDocuments({ role: "admin" }),
-      MachineBooking.countDocuments(),
-      MachineBooking.countDocuments({ status: "PENDING" }),
-      WhatsAppSession.countDocuments({
-        lastMessageAt: { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+      prisma.user.count({ where: { role: "farmer" } }),
+      prisma.user.count({ where: { role: "dealer" } }),
+      prisma.user.count({ where: { role: "machine_owner" } }),
+      prisma.user.count({ where: { role: "admin" } }),
+      prisma.machineBooking.count(),
+      prisma.machineBooking.count({ where: { status: "PENDING" } }),
+      prisma.whatsappSession.count({
+        where: {
+          updatedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+        },
       }),
-      WhatsAppMessageLog.countDocuments({
-        createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+      prisma.whatsAppMessageLog.count({
+        where: {
+          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+        },
       }),
     ]);
 
@@ -65,24 +66,31 @@ async function getUsers(req, res) {
 
     if (role) filter.role = role;
     if (search) {
-      filter.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { phone: { $regex: search, $options: "i" } },
-        { email: { $regex: search, $options: "i" } },
+      filter.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
       ];
     }
 
-    const users = await User.find(filter)
-      .select("-password")
-      .sort({ createdAt: -1 })
-      .skip((page - 1) * limit)
-      .limit(Number(limit));
+    const users = await prisma.user.findMany({
+      where: filter,
+      orderBy: { createdAt: 'desc' },
+      skip: (Number(page) - 1) * Number(limit),
+      take: Number(limit),
+    });
+    
+    // Omit passwords
+    const safeUsers = users.map(user => {
+      const { password, ...safeUser } = user;
+      return safeUser;
+    });
 
-    const total = await User.countDocuments(filter);
+    const total = await prisma.user.count({ where: filter });
 
     res.json({
       success: true,
-      users,
+      users: safeUsers,
       pagination: { total, page: Number(page), limit: Number(limit) },
     });
   } catch (err) {
@@ -97,16 +105,12 @@ async function getUsers(req, res) {
 async function updateUserStatus(req, res) {
   try {
     const { isActive } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { isActive },
-      { new: true }
-    ).select("-password");
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { isActive },
+    });
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
-
+    delete user.password;
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -120,15 +124,12 @@ async function updateUserStatus(req, res) {
 async function updateUserRole(req, res) {
   try {
     const { role } = req.body;
-    const user = await User.findByIdAndUpdate(
-      req.params.id,
-      { role },
-      { new: true }
-    ).select("-password");
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { role },
+    });
 
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+    delete user.password;
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -140,10 +141,9 @@ async function updateUserRole(req, res) {
  */
 async function deleteUser(req, res) {
   try {
-    const user = await User.findByIdAndDelete(req.params.id);
-    if (!user) {
-      return res.status(404).json({ success: false, message: "User not found" });
-    }
+    await prisma.user.delete({
+      where: { id: req.params.id },
+    });
     res.json({ success: true, message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -152,15 +152,15 @@ async function deleteUser(req, res) {
 
 /**
  * GET /api/admin/whatsapp/sessions
- * List all active WhatsApp conversation sessions.
  */
 async function getWhatsAppSessions(req, res) {
   try {
-    const sessions = await WhatsAppSession.find()
-      .sort({ lastMessageAt: -1 })
-      .limit(100)
-      .populate("user", "name role");
+    const sessions = await prisma.whatsappSession.findMany({
+      orderBy: { updatedAt: 'desc' },
+      take: 100,
+    });
 
+    // If we had a direct relation to User, we'd include it. But here we join manually if needed, or schema can handle it.
     res.json({ success: true, sessions });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -169,13 +169,13 @@ async function getWhatsAppSessions(req, res) {
 
 /**
  * GET /api/admin/whatsapp/messages/:phoneNumber
- * Full chat history for one farmer's number.
  */
 async function getWhatsAppMessages(req, res) {
   try {
-    const messages = await WhatsAppMessageLog.find({
-      phoneNumber: req.params.phoneNumber,
-    }).sort({ createdAt: 1 });
+    const messages = await prisma.whatsAppMessageLog.findMany({
+      where: { phoneNumber: req.params.phoneNumber },
+      orderBy: { createdAt: 'asc' },
+    });
 
     res.json({ success: true, messages });
   } catch (err) {
@@ -191,10 +191,14 @@ async function getBookings(req, res) {
     const { status } = req.query;
     const filter = status ? { status } : {};
 
-    const bookings = await MachineBooking.find(filter)
-      .sort({ createdAt: -1 })
-      .populate("farmer", "name")
-      .populate("machineOwner", "name");
+    const bookings = await prisma.machineBooking.findMany({
+      where: filter,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        farmer: { select: { name: true } },
+        machineOwner: { select: { name: true } }
+      }
+    });
 
     res.json({ success: true, bookings });
   } catch (err) {
@@ -204,23 +208,66 @@ async function getBookings(req, res) {
 
 /**
  * PATCH /api/admin/bookings/:id
- * body: { status: "APPROVED"|"REJECTED"|"COMPLETED", adminNote }
  */
 async function updateBookingStatus(req, res) {
   try {
     const { status, adminNote } = req.body;
 
-    const booking = await MachineBooking.findByIdAndUpdate(
-      req.params.id,
-      { status, ...(adminNote && { adminNote }) },
-      { new: true }
-    );
+    const data = { status };
+    if (adminNote) data.adminNote = adminNote;
 
-    if (!booking) {
-      return res.status(404).json({ success: false, message: "Booking not found" });
-    }
+    const booking = await prisma.machineBooking.update({
+      where: { id: req.params.id },
+      data,
+    });
 
     res.json({ success: true, booking });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+/**
+ * GET /api/admin/verifications
+ */
+async function getPendingVerifications(req, res) {
+  try {
+    const pendingUsers = await prisma.user.findMany({
+      where: {
+        role: { in: ["agri_agency", "machine_owner"] },
+        isVerified: false
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        dealerProfile: true,
+        machineOwnerProfile: true
+      }
+    });
+    
+    const safeUsers = pendingUsers.map(user => {
+      const { password, ...safeUser } = user;
+      return safeUser;
+    });
+
+    res.json({ success: true, pendingUsers: safeUsers });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+}
+
+/**
+ * PATCH /api/admin/verifications/:id/verify
+ */
+async function verifyUser(req, res) {
+  try {
+    const { isVerified } = req.body;
+    const user = await prisma.user.update({
+      where: { id: req.params.id },
+      data: { isVerified },
+    });
+
+    delete user.password;
+    res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
@@ -236,4 +283,6 @@ module.exports = {
   getWhatsAppMessages,
   getBookings,
   updateBookingStatus,
+  getPendingVerifications,
+  verifyUser
 };

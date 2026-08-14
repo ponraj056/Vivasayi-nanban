@@ -1,22 +1,25 @@
-const Product = require('../models/Product');
+const prisma = require('../config/prisma');
 
 // Add a new product (Dealer only)
 const addProduct = async (req, res) => {
   try {
-    // Assuming auth middleware sets req.user
-    const dealerId = req.user._id;
-    const { name, category, price, description, contactNumber } = req.body;
+    const dealerId = req.user.id;
+    const { name, category, price, description, contactNumber, district, taluk, village } = req.body;
 
-    const product = new Product({
-      name,
-      category,
-      price,
-      dealerId,
-      description,
-      contactNumber,
+    const product = await prisma.product.create({
+      data: {
+        name,
+        category,
+        price: parseFloat(price),
+        dealerId,
+        description: description || "",
+        contactNumber,
+        district: district || "",
+        taluk: taluk || "",
+        village: village || "",
+      }
     });
 
-    await product.save();
     res.status(201).json({ success: true, product });
   } catch (error) {
     console.error('Error adding product:', error);
@@ -27,8 +30,11 @@ const addProduct = async (req, res) => {
 // Get all products by a specific dealer (For Dealer Dashboard)
 const getDealerProducts = async (req, res) => {
   try {
-    const dealerId = req.user._id;
-    const products = await Product.find({ dealerId }).sort({ createdAt: -1 });
+    const dealerId = req.user.id;
+    const products = await prisma.product.findMany({
+      where: { dealerId },
+      orderBy: { createdAt: 'desc' }
+    });
     res.status(200).json({ success: true, products });
   } catch (error) {
     console.error('Error fetching dealer products:', error);
@@ -39,7 +45,12 @@ const getDealerProducts = async (req, res) => {
 // Get all products (For Farmer Marketplace)
 const getAllProducts = async (req, res) => {
   try {
-    const products = await Product.find().populate('dealerId', 'name email').sort({ createdAt: -1 });
+    const products = await prisma.product.findMany({
+      include: {
+        dealer: { select: { name: true, email: true } }
+      },
+      orderBy: { createdAt: 'desc' }
+    });
     res.status(200).json({ success: true, products });
   } catch (error) {
     console.error('Error fetching all products:', error);

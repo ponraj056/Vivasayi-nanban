@@ -1,0 +1,275 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String    @id @default(uuid())
+  name              String
+  phone             String    @unique
+  email             String?   @default("")
+  password          String
+  role              String // "farmer", "dealer", "agri_agency", "machine_owner", "agri_officer", "admin"
+  preferredLanguage String    @default("Tamil")
+  isActive          Boolean   @default(true)
+  isVerified        Boolean   @default(false)
+  otp               String?
+  otpExpiry         DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Profiles
+  farmerProfile       FarmerProfile?
+  dealerProfile       DealerProfile?
+  machineOwnerProfile MachineOwnerProfile?
+
+  // Relations
+  machines                Machine[]        @relation("MachineOwner")
+  machineBookingsAsFarmer MachineBooking[] @relation("BookingFarmer")
+  machineBookingsAsOwner  MachineBooking[] @relation("BookingOwner")
+  products                Product[]
+  inquiriesAsFarmer       Inquiry[]        @relation("InquiryFarmer")
+  inquiriesAsAgency       Inquiry[]        @relation("InquiryAgency")
+  diseaseReports          DiseaseReport[]
+  broadcastsSent          Broadcast[]      @relation("BroadcastSentBy")
+  broadcastsAgency        Broadcast[]      @relation("BroadcastAgency")
+  supportTickets          SupportTicket[]  @relation("TicketFarmer")
+  assignedTickets         SupportTicket[]  @relation("TicketOfficer")
+}
+
+model FarmerProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  location String?
+  district String?
+  taluk    String?
+  village  String?
+  pincode  String?
+  landSize Float? // in acres
+  crops    String[] // PostgreSQL supports scalar lists
+}
+
+model DealerProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  shopName String?
+  address  String?
+  district String?
+  pincode  String?
+}
+
+model MachineOwnerProfile {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  district      String?
+  serviceRadius Float?
+}
+
+model Machine {
+  id      String @id @default(uuid())
+  ownerId String
+  owner   User   @relation("MachineOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+
+  machineType String // "MACHINE_TRACTOR", "MACHINE_HARVESTER", etc.
+  name        String
+  model       String?
+  description String? @default("")
+  pricePerDay Float
+  hourlyRate  Float?
+  dailyRate   Float?
+
+  district     String
+  taluk        String?
+  village      String?
+  contactPhone String?
+  location     String?  @default("")
+  photoUrl     String?  @default("")
+  images       String[]
+
+  isAvailable      Boolean  @default(true)
+  availability     String   @default("available") // "available", "booked", "maintenance"
+  unavailableDates String[]
+
+  bookings MachineBooking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([district, machineType])
+}
+
+model MachineBooking {
+  id          String  @id @default(uuid())
+  farmerPhone String? @default("")
+
+  farmerId String?
+  farmer   User?   @relation("BookingFarmer", fields: [farmerId], references: [id], onDelete: SetNull)
+
+  machineId String?
+  machine   Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
+
+  machineOwnerId String?
+  machineOwner   User?   @relation("BookingOwner", fields: [machineOwnerId], references: [id], onDelete: SetNull)
+
+  machineType   String
+  requestedDate String
+  status        String  @default("pending") // "pending", "accepted", "rejected", "completed", "PENDING", "APPROVED", "REJECTED", "COMPLETED"
+  adminNote     String? @default("")
+  source        String  @default("WHATSAPP") // "WHATSAPP", "WEB"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Product {
+  id       String @id @default(uuid())
+  dealerId String
+  dealer   User   @relation(fields: [dealerId], references: [id], onDelete: Cascade)
+
+  name            String
+  brand           String?  @default("")
+  category        String // 'Seeds', 'Fertilizer', 'Pesticide', 'Tools', 'Other'
+  price           Float
+  unit            String   @default("kg") // 'kg', 'litre', 'packet'
+  stockStatus     String   @default("inStock") // 'inStock', 'lowStock', 'outOfStock'
+  applicableCrops String[]
+  description     String?
+  contactNumber   String
+  district        String
+  taluk           String
+  village         String
+
+  inquiries Inquiry[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Inquiry {
+  id String @id @default(uuid())
+
+  farmerId String
+  farmer   User   @relation("InquiryFarmer", fields: [farmerId], references: [id], onDelete: Cascade)
+
+  agencyId String
+  agency   User   @relation("InquiryAgency", fields: [agencyId], references: [id], onDelete: Cascade)
+
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  message String
+  status  String @default("open") // "open", "responded"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model SupportTicket {
+  id String @id @default(uuid())
+
+  farmerId String
+  farmer   User   @relation("TicketFarmer", fields: [farmerId], references: [id], onDelete: Cascade)
+
+  assignedOfficerId String?
+  assignedOfficer   User?   @relation("TicketOfficer", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
+
+  status String @default("open") // "open", "resolved"
+
+  messages TicketMessage[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model TicketMessage {
+  id       String        @id @default(uuid())
+  ticketId String
+  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+
+  sender    String // "farmer", "agri_officer", "system"
+  text      String
+  timestamp DateTime @default(now())
+}
+
+model Broadcast {
+  id String @id @default(uuid())
+
+  message         String
+  targetDistricts String[]
+  targetCrops     String[]
+
+  sentById String
+  sentBy   User   @relation("BroadcastSentBy", fields: [sentById], references: [id], onDelete: Cascade)
+
+  agencyId String?
+  agency   User?   @relation("BroadcastAgency", fields: [agencyId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model DiseaseReport {
+  id String @id @default(uuid())
+
+  farmerId String?
+  farmer   User?   @relation(fields: [farmerId], references: [id], onDelete: SetNull)
+
+  imageUrl        String?
+  diseaseName     String?
+  confidence      Float?
+  treatmentAdvice String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Location {
+  id       String @id @default(uuid())
+  district String
+  taluk    String
+  village  String
+  pincode  String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([district])
+  @@index([taluk])
+  @@map("tn_locations")
+}
+
+model WhatsAppMessageLog {
+  id          String  @id @default(uuid())
+  phoneNumber String
+  direction   String // "INBOUND", "OUTBOUND"
+  messageType String  @default("text") // "text", "image", "interactive", "template", "location"
+  content     String?
+  mediaId     String?
+  waMessageId String?
+  status      String  @default("received") // "sent", "delivered", "read", "failed", "received"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phoneNumber])
+}
+
+model WhatsappSession {
+  id          String   @id @default(uuid())
+  farmerPhone String   @unique
+  currentStep String   @default("main_menu")
+  contextData Json?    @default("{}")
+  updatedAt   DateTime @default(now())
+
+  createdAt DateTime @default(now())
+}
