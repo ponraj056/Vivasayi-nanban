@@ -5,21 +5,23 @@ import { useAuth } from "../context/AuthContext";
 const ROLE_COLORS = {
   farmer: "#2E7D32",
   dealer: "#1565C0",
-  machine_owner: "#E65100",
+  machineOwner: "#E65100",
+  agency: "#FBC02D",
   admin: "#6A1B9A",
 };
 
 const ROLE_LABELS = {
   farmer: "விவசாயி (Farmer)",
-  dealer: "கடை உரிமையாளர் (Dealer)",
-  machine_owner: "இயந்திர உரிமையாளர் (Machine Owner)",
+  dealer: "வியாபாரி (Dealer)",
+  machineOwner: "இயந்திர உரிமையாளர் (Machine Owner)",
+  agency: "நிறுவனம் (Agency)",
   admin: "நிர்வாகி (Admin)",
 };
 
 export default function Login() {
   const { login } = useAuth();
   const navigate = useNavigate();
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ phone: "", password: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -28,7 +30,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const user = await login(form.email, form.password);
+      const user = await login(form.phone, form.password);
       // Redirect based on role
       navigate(`/dashboard/${user.role}`);
     } catch (err) {
@@ -55,13 +57,13 @@ export default function Login() {
         {error && <div style={styles.error}>{error}</div>}
 
         <form onSubmit={handleSubmit} style={styles.form}>
-          <label style={styles.label}>Email</label>
+          <label style={styles.label}>Phone Number</label>
           <input
             style={styles.input}
-            type="email"
-            placeholder="your@email.com"
-            value={form.email}
-            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            type="tel"
+            placeholder="9876543210"
+            value={form.phone}
+            onChange={(e) => setForm({ ...form, phone: e.target.value })}
             required
           />
 

@@ -3,8 +3,6 @@ import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import VerifyEmail from "./pages/VerifyEmail";
-import ForgotPassword from "./pages/ForgotPassword";
 import Dashboard from "./pages/Dashboard";
 import AdminPanel from "./pages/admin/AdminPanel";
 import DiseaseCheck from "./pages/DiseaseCheck";
@@ -14,9 +12,6 @@ import RentMachine from "./pages/farmer/RentMachine";
 import MachineList from "./pages/machine_owner/MachineList";
 import MachineBookings from "./pages/machine_owner/MachineBookings";
 import MachineOwnerEarnings from "./pages/machine_owner/MachineOwnerEarnings";
-import OfficerTickets from "./pages/agri_officer/OfficerTickets";
-import OfficerAnalytics from "./pages/agri_officer/OfficerAnalytics";
-import OfficerBroadcast from "./pages/agri_officer/OfficerBroadcast";
 import AgencyOrders from "./pages/agri_agency/AgencyOrders";
 import AgencyReports from "./pages/agri_agency/AgencyReports";
 import AdminVerify from "./pages/admin/AdminVerify";
@@ -30,8 +25,7 @@ export default function App() {
           <Route path="/" element={<Navigate to="/login" replace />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/verify-email" element={<VerifyEmail />} />
-          <Route path="/forgot-password" element={<ForgotPassword />} />
+          
           <Route
             path="/dashboard/:role"
             element={
@@ -73,9 +67,9 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard/agri_agency/products"
+            path="/dashboard/agency/products"
             element={
-              <ProtectedRoute allowedRoles={["agri_agency"]}>
+              <ProtectedRoute allowedRoles={["agency"]}>
                 <Layout>
                   <DealerProducts />
                 </Layout>
@@ -93,9 +87,9 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard/machine_owner/machines"
+            path="/dashboard/machineOwner/machines"
             element={
-              <ProtectedRoute allowedRoles={["machine_owner"]}>
+              <ProtectedRoute allowedRoles={["machineOwner"]}>
                 <Layout>
                   <MachineList />
                 </Layout>
@@ -103,9 +97,9 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard/machine_owner/bookings"
+            path="/dashboard/machineOwner/bookings"
             element={
-              <ProtectedRoute allowedRoles={["machine_owner"]}>
+              <ProtectedRoute allowedRoles={["machineOwner"]}>
                 <Layout>
                   <MachineBookings />
                 </Layout>
@@ -113,9 +107,9 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard/machine_owner/earnings"
+            path="/dashboard/machineOwner/earnings"
             element={
-              <ProtectedRoute allowedRoles={["machine_owner"]}>
+              <ProtectedRoute allowedRoles={["machineOwner"]}>
                 <Layout>
                   <MachineOwnerEarnings />
                 </Layout>
@@ -123,39 +117,9 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard/agri_officer/tickets"
+            path="/dashboard/agency/orders"
             element={
-              <ProtectedRoute allowedRoles={["agri_officer"]}>
-                <Layout>
-                  <OfficerTickets />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/agri_officer/analytics"
-            element={
-              <ProtectedRoute allowedRoles={["agri_officer"]}>
-                <Layout>
-                  <OfficerAnalytics />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/agri_officer/broadcasts"
-            element={
-              <ProtectedRoute allowedRoles={["agri_officer"]}>
-                <Layout>
-                  <OfficerBroadcast />
-                </Layout>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/dashboard/agri_agency/orders"
-            element={
-              <ProtectedRoute allowedRoles={["agri_agency"]}>
+              <ProtectedRoute allowedRoles={["agency"]}>
                 <Layout>
                   <AgencyOrders />
                 </Layout>
@@ -163,9 +127,9 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard/agri_agency/reports"
+            path="/dashboard/agency/reports"
             element={
-              <ProtectedRoute allowedRoles={["agri_agency"]}>
+              <ProtectedRoute allowedRoles={["agency"]}>
                 <Layout>
                   <AgencyReports />
                 </Layout>

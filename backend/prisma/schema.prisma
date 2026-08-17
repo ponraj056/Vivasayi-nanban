@@ -6,270 +6,318 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id                String    @id @default(uuid())
-  name              String
-  phone             String    @unique
-  email             String?   @default("")
-  password          String
-  role              String // "farmer", "dealer", "agri_agency", "machine_owner", "agri_officer", "admin"
-  preferredLanguage String    @default("Tamil")
-  isActive          Boolean   @default(true)
-  isVerified        Boolean   @default(false)
-  otp               String?
-  otpExpiry         DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // Profiles
-  farmerProfile       FarmerProfile?
-  dealerProfile       DealerProfile?
-  machineOwnerProfile MachineOwnerProfile?
-
-  // Relations
-  machines                Machine[]        @relation("MachineOwner")
-  machineBookingsAsFarmer MachineBooking[] @relation("BookingFarmer")
-  machineBookingsAsOwner  MachineBooking[] @relation("BookingOwner")
-  products                Product[]
-  inquiriesAsFarmer       Inquiry[]        @relation("InquiryFarmer")
-  inquiriesAsAgency       Inquiry[]        @relation("InquiryAgency")
-  diseaseReports          DiseaseReport[]
-  broadcastsSent          Broadcast[]      @relation("BroadcastSentBy")
-  broadcastsAgency        Broadcast[]      @relation("BroadcastAgency")
-  supportTickets          SupportTicket[]  @relation("TicketFarmer")
-  assignedTickets         SupportTicket[]  @relation("TicketOfficer")
+enum Role {
+  farmer
+  dealer
+  machineOwner
+  agency
+  admin
 }
 
-model FarmerProfile {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  location String?
-  district String?
-  taluk    String?
-  village  String?
-  pincode  String?
-  landSize Float? // in acres
-  crops    String[] // PostgreSQL supports scalar lists
+enum AgencyVerificationStatus {
+  pending
+  approved
+  rejected
+  suspended
 }
 
-model DealerProfile {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  shopName String?
-  address  String?
-  district String?
-  pincode  String?
+enum MachineType {
+  tractor
+  harvester
+  sprayer
 }
 
-model MachineOwnerProfile {
-  id     String @id @default(uuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+enum BookingStatus {
+  pending
+  approved
+  rejected
+  completed
+}
 
+enum Source {
+  whatsapp
+  web
+}
+
+enum Language {
+  ta
+  en
+}
+
+enum MessageDirection {
+  inbound
+  outbound
+}
+
+enum ProductCategory {
+  seed
+  fertilizer
+  organic_fertilizer
+  bio_fertilizer
+  nutrient
+  plant_protection
+  tool
+  irrigation
+  sprayer
+  other
+}
+
+enum OrderStatus {
+  pending
+  confirmed
+  processing
+  ready
+  completed
+  cancelled
+  rejected
+}
+
+model users {
+  id            String   @id @default(uuid())
+  name          String
+  phone         String   @unique
+  email         String?
+  password_hash String
+  role          Role
+  village       String?
   district      String?
-  serviceRadius Float?
-}
+  land_size     Float?
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
-model Machine {
-  id      String @id @default(uuid())
-  ownerId String
-  owner   User   @relation("MachineOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  // Relationships
+  agency_profile            agency_profiles?
+  farmer_crops              farmer_crops[]
+  machines                  machines[]
+  machine_bookings_as_farmer machine_bookings[] @relation("FarmerBookings")
+  machine_bookings_as_owner machine_bookings[]  @relation("OwnerBookings")
+  whatsapp_sessions         whatsapp_sessions[]
+  disease_detections        disease_detections[]
+  products                  products[]
+  cart                      carts?
+  product_orders            product_orders[]
 
-  machineType String // "MACHINE_TRACTOR", "MACHINE_HARVESTER", etc.
-  name        String
-  model       String?
-  description String? @default("")
-  pricePerDay Float
-  hourlyRate  Float?
-  dailyRate   Float?
-
-  district     String
-  taluk        String?
-  village      String?
-  contactPhone String?
-  location     String?  @default("")
-  photoUrl     String?  @default("")
-  images       String[]
-
-  isAvailable      Boolean  @default(true)
-  availability     String   @default("available") // "available", "booked", "maintenance"
-  unavailableDates String[]
-
-  bookings MachineBooking[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([district, machineType])
-}
-
-model MachineBooking {
-  id          String  @id @default(uuid())
-  farmerPhone String? @default("")
-
-  farmerId String?
-  farmer   User?   @relation("BookingFarmer", fields: [farmerId], references: [id], onDelete: SetNull)
-
-  machineId String?
-  machine   Machine? @relation(fields: [machineId], references: [id], onDelete: SetNull)
-
-  machineOwnerId String?
-  machineOwner   User?   @relation("BookingOwner", fields: [machineOwnerId], references: [id], onDelete: SetNull)
-
-  machineType   String
-  requestedDate String
-  status        String  @default("pending") // "pending", "accepted", "rejected", "completed", "PENDING", "APPROVED", "REJECTED", "COMPLETED"
-  adminNote     String? @default("")
-  source        String  @default("WHATSAPP") // "WHATSAPP", "WEB"
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Product {
-  id       String @id @default(uuid())
-  dealerId String
-  dealer   User   @relation(fields: [dealerId], references: [id], onDelete: Cascade)
-
-  name            String
-  brand           String?  @default("")
-  category        String // 'Seeds', 'Fertilizer', 'Pesticide', 'Tools', 'Other'
-  price           Float
-  unit            String   @default("kg") // 'kg', 'litre', 'packet'
-  stockStatus     String   @default("inStock") // 'inStock', 'lowStock', 'outOfStock'
-  applicableCrops String[]
-  description     String?
-  contactNumber   String
-  district        String
-  taluk           String
-  village         String
-
-  inquiries Inquiry[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Inquiry {
-  id String @id @default(uuid())
-
-  farmerId String
-  farmer   User   @relation("InquiryFarmer", fields: [farmerId], references: [id], onDelete: Cascade)
-
-  agencyId String
-  agency   User   @relation("InquiryAgency", fields: [agencyId], references: [id], onDelete: Cascade)
-
-  productId String
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-
-  message String
-  status  String @default("open") // "open", "responded"
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model SupportTicket {
-  id String @id @default(uuid())
-
-  farmerId String
-  farmer   User   @relation("TicketFarmer", fields: [farmerId], references: [id], onDelete: Cascade)
-
-  assignedOfficerId String?
-  assignedOfficer   User?   @relation("TicketOfficer", fields: [assignedOfficerId], references: [id], onDelete: SetNull)
-
-  status String @default("open") // "open", "resolved"
-
-  messages TicketMessage[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model TicketMessage {
-  id       String        @id @default(uuid())
-  ticketId String
-  ticket   SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
-
-  sender    String // "farmer", "agri_officer", "system"
-  text      String
-  timestamp DateTime @default(now())
-}
-
-model Broadcast {
-  id String @id @default(uuid())
-
-  message         String
-  targetDistricts String[]
-  targetCrops     String[]
-
-  sentById String
-  sentBy   User   @relation("BroadcastSentBy", fields: [sentById], references: [id], onDelete: Cascade)
-
-  agencyId String?
-  agency   User?   @relation("BroadcastAgency", fields: [agencyId], references: [id], onDelete: SetNull)
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model DiseaseReport {
-  id String @id @default(uuid())
-
-  farmerId String?
-  farmer   User?   @relation(fields: [farmerId], references: [id], onDelete: SetNull)
-
-  imageUrl        String?
-  diseaseName     String?
-  confidence      Float?
-  treatmentAdvice String?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Location {
-  id       String @id @default(uuid())
-  district String
-  taluk    String
-  village  String
-  pincode  String
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  @@index([phone])
+  @@index([role])
   @@index([district])
-  @@index([taluk])
-  @@map("tn_locations")
 }
 
-model WhatsAppMessageLog {
-  id          String  @id @default(uuid())
-  phoneNumber String
-  direction   String // "INBOUND", "OUTBOUND"
-  messageType String  @default("text") // "text", "image", "interactive", "template", "location"
-  content     String?
-  mediaId     String?
-  waMessageId String?
-  status      String  @default("received") // "sent", "delivered", "read", "failed", "received"
+model agency_profiles {
+  id                   String                   @id @default(uuid())
+  user_id              String                   @unique
+  business_name        String
+  business_description String?
+  phone                String
+  email                String?
+  address              String
+  village              String
+  district             String
+  pincode              String
+  gst_number           String?
+  license_number       String?
+  logo_url             String?
+  verification_status  AgencyVerificationStatus @default(pending)
+  created_at           DateTime                 @default(now())
+  updated_at           DateTime                 @updatedAt
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([phoneNumber])
+  user users @relation(fields: [user_id], references: [id])
 }
 
-model WhatsappSession {
+model farmer_crops {
+  id        String @id @default(uuid())
+  user_id   String
+  crop_name String
+
+  user users @relation(fields: [user_id], references: [id])
+}
+
+model crop_prices {
   id          String   @id @default(uuid())
-  farmerPhone String   @unique
-  currentStep String   @default("main_menu")
-  contextData Json?    @default("{}")
-  updatedAt   DateTime @default(now())
+  crop_name   String
+  market      String?
+  district    String
+  modal_price Float
+  price_date  DateTime
 
-  createdAt DateTime @default(now())
+  @@index([crop_name])
+  @@index([district])
+  @@index([market])
+  @@index([price_date])
+}
+
+model machines {
+  id             String      @id @default(uuid())
+  owner_id       String
+  machine_type   MachineType
+  name           String
+  description    String?
+  price_per_day  Float
+  district       String
+  location       String?
+  photo_url      String?
+  is_available   Boolean     @default(true)
+
+  owner            users                       @relation(fields: [owner_id], references: [id])
+  unavailable_dates machine_unavailable_dates[]
+  bookings         machine_bookings[]
+
+  @@index([machine_type])
+  @@index([district])
+}
+
+model machine_unavailable_dates {
+  id         String   @id @default(uuid())
+  machine_id String
+  date       DateTime
+
+  machine machines @relation(fields: [machine_id], references: [id])
+}
+
+model machine_bookings {
+  id               String        @id @default(uuid())
+  farmer_id        String
+  farmer_phone     String
+  machine_id       String
+  machine_type     MachineType
+  requested_date   DateTime
+  status           BookingStatus @default(pending)
+  machine_owner_id String
+  admin_note       String?
+  source           Source
+  created_at       DateTime      @default(now())
+
+  farmer        users    @relation("FarmerBookings", fields: [farmer_id], references: [id])
+  machine       machines @relation(fields: [machine_id], references: [id])
+  machine_owner users    @relation("OwnerBookings", fields: [machine_owner_id], references: [id])
+
+  @@index([status])
+  @@index([requested_date])
+}
+
+model whatsapp_sessions {
+  id              String   @id @default(uuid())
+  phone_number    String   @unique
+  user_id         String?
+  language        Language @default(ta)
+  current_flow    String
+  context         Json     @default("{}")
+  last_message_at DateTime @default(now())
+
+  user users? @relation(fields: [user_id], references: [id])
+
+  @@index([phone_number])
+}
+
+model whatsapp_message_logs {
+  id            String           @id @default(uuid())
+  phone_number  String
+  direction     MessageDirection
+  message_type  String
+  content       String?
+  media_id      String?
+  wa_message_id String?
+  status        String
+  created_at    DateTime         @default(now())
+
+  @@index([phone_number])
+}
+
+model disease_detections {
+  id                String   @id @default(uuid())
+  farmer_id         String?
+  phone_number      String
+  disease           String
+  confidence        Float
+  crop              String
+  recommendation_en String?
+  recommendation_ta String?
+  created_at        DateTime @default(now())
+
+  farmer users? @relation(fields: [farmer_id], references: [id])
+
+  @@index([phone_number])
+  @@index([created_at])
+}
+
+model products {
+  id             String          @id @default(uuid())
+  agency_id      String
+  name           String
+  description    String?
+  category       ProductCategory
+  crop_name      String?
+  brand          String?
+  unit           String
+  price          Float
+  stock_quantity Int
+  image_url      String?
+  district       String
+  is_available   Boolean         @default(true)
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+
+  agency      users                 @relation(fields: [agency_id], references: [id])
+  cart_items  cart_items[]
+  order_items product_order_items[]
+
+  @@index([agency_id])
+  @@index([category])
+  @@index([crop_name])
+  @@index([district])
+  @@index([is_available])
+}
+
+model carts {
+  id        String @id @default(uuid())
+  farmer_id String @unique
+
+  farmer     users        @relation(fields: [farmer_id], references: [id])
+  cart_items cart_items[]
+}
+
+model cart_items {
+  id         String @id @default(uuid())
+  cart_id    String
+  product_id String
+  quantity   Int
+
+  cart    carts    @relation(fields: [cart_id], references: [id])
+  product products @relation(fields: [product_id], references: [id])
+}
+
+model product_orders {
+  id               String      @id @default(uuid())
+  farmer_id        String
+  total_amount     Float
+  status           OrderStatus @default(pending)
+  delivery_address String
+  phone            String
+  source           Source
+  created_at       DateTime    @default(now())
+  updated_at       DateTime    @updatedAt
+
+  farmer      users                 @relation(fields: [farmer_id], references: [id])
+  order_items product_order_items[]
+
+  @@index([farmer_id])
+  @@index([status])
+  @@index([created_at])
+}
+
+model product_order_items {
+  id         String @id @default(uuid())
+  order_id   String
+  product_id String
+  agency_id  String
+  quantity   Int
+  unit_price Float
+  subtotal   Float
+
+  order   product_orders @relation(fields: [order_id], references: [id])
+  product products       @relation(fields: [product_id], references: [id])
+
+  @@index([order_id])
+  @@index([product_id])
+  @@index([agency_id])
 }

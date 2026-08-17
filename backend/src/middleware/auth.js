@@ -11,7 +11,7 @@ async function protect(req, res, next) {
     const token = authHeader.split(" ")[1];
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    const user = await prisma.user.findUnique({
+    const user = await prisma.users.findUnique({
       where: { id: decoded.id }
     });
     
@@ -19,8 +19,12 @@ async function protect(req, res, next) {
       return res.status(401).json({ success: false, message: "User not found" });
     }
 
-    // Don't send password around in req.user
-    delete user.password;
+    if (!user.is_active) {
+      return res.status(403).json({ success: false, message: "Account is inactive" });
+    }
+
+    // Omit sensitive data
+    delete user.password_hash;
     
     req.user = user;
     next();
