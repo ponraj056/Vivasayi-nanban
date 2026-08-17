@@ -3,7 +3,7 @@ const wa = require("./whatsappService");
 const strings = require("./botStrings");
 const cropPriceLookup = require("./cropPriceLookupService");
 const diseaseDetection = require("./diseaseDetectionService");
-// const machineBooking = require("./machineBookingService");
+const machineBooking = require("./machineBookingService");
 
 /**
  * Fetch or create a session for a phone number.
@@ -94,10 +94,20 @@ async function handleIncomingMessage(phoneNumber, message) {
     case "DISEASE_QUERY_WAIT_IMAGE":
       return handleDiseaseImage(session, message);
 
-    case "MACHINE_BOOKING_TYPE":
-      // Placeholder until Stage 7
-      await wa.sendText(session.phone_number, "Machine booking module is under development.");
-      return sendMainMenu(session);
+    case "MACHINE_BOOKING_TYPE": {
+      const res = await machineBooking.handleMachineTypeSelection(session, message);
+      return res.nextFlow === "MAIN_MENU" ? sendMainMenu(session) : setFlow(session, res.nextFlow);
+    }
+
+    case "MACHINE_BOOKING_DATE": {
+      const res = await machineBooking.handleBookingDate(session, message);
+      return res.nextFlow === "MAIN_MENU" ? sendMainMenu(session) : setFlow(session, res.nextFlow);
+    }
+
+    case "MACHINE_BOOKING_CONFIRM": {
+      const res = await machineBooking.handleBookingConfirm(session, message);
+      return res.nextFlow === "MAIN_MENU" ? sendMainMenu(session) : setFlow(session, res.nextFlow);
+    }
 
     default:
       return sendMainMenu(session);

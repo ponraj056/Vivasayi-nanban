@@ -103,44 +103,21 @@ async function testFlow() {
   
   await new Promise(r => setTimeout(r, 1000));
 
-  // 3. Select Disease Detection from Main Menu
-  await sendDummyInteractiveReply("MENU_DISEASE", "நோய் கண்டறிய (Disease)");
+  // 3. Select Machine Rental from Main Menu
+  await sendDummyInteractiveReply("MENU_MACHINE", "இயந்திரம் வாடகை (Machine Rental)");
   await new Promise(r => setTimeout(r, 1000));
 
-  // 6. Send a dummy image
-  const imagePayload = {
-    object: "whatsapp_business_account",
-    entry: [
-      {
-        changes: [
-          {
-            value: {
-              messages: [
-                {
-                  from: SENDER_PHONE,
-                  id: "wamid.dummy_image_" + Date.now(),
-                  type: "image",
-                  image: {
-                    id: "dummy_image_id_12345",
-                    mime_type: "image/jpeg",
-                    sha256: "dummy_sha"
-                  }
-                }
-              ]
-            }
-          }
-        ]
-      }
-    ]
-  };
+  // 8. Select Machine Type (Tractor)
+  await sendDummyInteractiveReply("MACHINE_TRACTOR", "டிராக்டர் (Tractor)");
+  await new Promise(r => setTimeout(r, 1000));
 
-  try {
-    const res = await axios.post(WEBHOOK_URL, imagePayload);
-    console.log(`Sent dummy image: Status ${res.status}`);
-  } catch (err) {
-    console.error("Error sending dummy image:", err.message);
-  }
-  
+  // 9. Send Date
+  await sendDummyMessage("20-10-2026");
+  await new Promise(r => setTimeout(r, 1000));
+
+  // 10. Confirm Booking
+  await sendDummyInteractiveReply("BOOKING_CONFIRM_YES", "ஆம் (Yes)");
+
   console.log("--- Test Complete ---");
 }
 
