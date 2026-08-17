@@ -15,6 +15,26 @@ const client = axios.create({
   timeout: 15000,
 });
 
+// Mock interceptor for local testing without real WhatsApp credentials
+client.interceptors.request.use((config) => {
+  if (!WA_TOKEN || WA_TOKEN === "your_meta_system_user_token_here") {
+    console.log("[Mock WhatsApp API] Request:", config.url, JSON.stringify(config.data));
+    // Cancel the request to prevent actual network call
+    return Promise.reject({ isMock: true, message: "Mocked WhatsApp API Call" });
+  }
+  return config;
+});
+
+client.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.isMock) {
+      return Promise.resolve({ data: { success: true, mocked: true } });
+    }
+    return Promise.reject(error);
+  }
+);
+
 /**
  * Send a plain text message
  */

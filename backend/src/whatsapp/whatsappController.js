@@ -44,14 +44,14 @@ async function receiveWebhook(req, res) {
 
     const parsed = parseMessage(waMessage);
 
-    await prisma.whatsAppMessageLog.create({
+    await prisma.whatsapp_message_logs.create({
       data: {
-        phoneNumber,
-        direction: "INBOUND",
-        messageType: parsed.type,
+        phone_number: phoneNumber,
+        direction: "inbound",
+        message_type: parsed.type,
         content: parsed.text || null,
-        mediaId: parsed.mediaId || null,
-        waMessageId: waMessage.id,
+        media_id: parsed.mediaId || null,
+        wa_message_id: waMessage.id,
         status: "received",
       }
     });

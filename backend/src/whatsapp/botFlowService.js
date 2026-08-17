@@ -1,46 +1,60 @@
 const prisma = require("../config/prisma");
 const wa = require("./whatsappService");
 const strings = require("./botStrings");
-const cropPriceLookup = require("./cropPriceLookupService");
-const diseaseDetection = require("./diseaseDetectionService");
-const machineBooking = require("./machineBookingService");
-
-const { getLatestPrice } = cropPriceLookup;
-const { queueDiseaseDetection } = diseaseDetection;
-const { createMachineBookingRequest } = machineBooking;
+// const cropPriceLookup = require("./cropPriceLookupService");
+// const diseaseDetection = require("./diseaseDetectionService");
+// const machineBooking = require("./machineBookingService");
 
 /**
  * Fetch or create a session for a phone number.
  */
 async function getOrCreateSession(phoneNumber) {
-  let session = await prisma.whatsappSession.findUnique({ where: { farmerPhone: phoneNumber } });
+  let session = await prisma.whatsapp_sessions.findUnique({ where: { phone_number: phoneNumber } });
   if (!session) {
-    session = await prisma.whatsappSession.create({ data: { farmerPhone: phoneNumber } });
+    session = await prisma.whatsapp_sessions.create({ 
+      data: { 
+        phone_number: phoneNumber,
+        current_flow: "MAIN_MENU",
+        context: {}
+      } 
+    });
   }
   return session;
 }
 
 async function setFlow(session, flow, contextPatch = {}) {
-  const currentContext = typeof session.contextData === 'object' && session.contextData !== null ? session.contextData : {};
+  const currentContext = typeof session.context === 'object' && session.context !== null ? session.context : {};
   const updatedContext = { ...currentContext, ...contextPatch };
   
-  await prisma.whatsappSession.update({
+  await prisma.whatsapp_sessions.update({
     where: { id: session.id },
     data: {
-      currentStep: flow,
-      contextData: updatedContext,
-      updatedAt: new Date()
+      current_flow: flow,
+      context: updatedContext,
+      last_message_at: new Date()
     }
   });
   
-  session.currentStep = flow;
-  session.contextData = updatedContext;
+  session.current_flow = flow;
+  session.context = updatedContext;
+}
+
+async function sendLanguageMenu(session) {
+  await wa.sendButtons(
+    session.phone_number,
+    "Welcome to Vivasayi Nanban! / விவசாயி நண்பனுக்கு வரவேற்கிறோம்!\n\nPlease select your preferred language / உங்கள் மொழியைத் தேர்ந்தெடுக்கவும்:",
+    [
+      { id: "LANG_TA", title: "தமிழ்" },
+      { id: "LANG_EN", title: "English" }
+    ]
+  );
+  await setFlow(session, "LANGUAGE_SELECTION");
 }
 
 async function sendMainMenu(session) {
   const lang = session.language || "ta";
   await wa.sendButtons(
-    session.farmerPhone,
+    session.phone_number,
     strings.welcome[lang],
     strings.mainMenuButtons[lang]
   );
@@ -58,32 +72,65 @@ async function handleIncomingMessage(phoneNumber, message) {
   // Global shortcuts — work from any flow
   const raw = (message.text || "").trim().toLowerCase();
   if (["hi", "hello", "menu", "வணக்கம்", "start"].includes(raw)) {
+    // If language is not explicitly set, ask for language first
+    if (!session.context?.langSet) {
+      return sendLanguageMenu(session);
+    }
     return sendMainMenu(session);
   }
 
-  switch (session.currentStep) {
+  switch (session.current_flow) {
+    case "LANGUAGE_SELECTION":
+      return handleLanguageSelection(session, message);
+
     case "main_menu":
     case "IDLE":
-      return sendMainMenu(session);
-
     case "MAIN_MENU":
       return handleMainMenuSelection(session, message);
 
     case "PRICE_QUERY_CROP":
-      return handlePriceQuery(session, message);
+      // Placeholder until Stage 5
+      await wa.sendText(session.phone_number, "Crop prices module is under development.");
+      return sendMainMenu(session);
 
     case "DISEASE_QUERY_WAIT_IMAGE":
-      return handleDiseaseImage(session, message);
+      // Placeholder until Stage 6
+      await wa.sendText(session.phone_number, "Disease detection module is under development.");
+      return sendMainMenu(session);
 
     case "MACHINE_BOOKING_TYPE":
-      return handleMachineTypeSelection(session, message);
-
-    case "MACHINE_BOOKING_DATE":
-      return handleMachineBookingDate(session, message);
+      // Placeholder until Stage 7
+      await wa.sendText(session.phone_number, "Machine booking module is under development.");
+      return sendMainMenu(session);
 
     default:
       return sendMainMenu(session);
   }
+}
+
+async function handleLanguageSelection(session, message) {
+  const choice = message.interactiveId;
+  
+  if (choice === "LANG_TA") {
+    await prisma.whatsapp_sessions.update({
+      where: { id: session.id },
+      data: { language: "ta", context: { langSet: true } }
+    });
+    session.language = "ta";
+    return sendMainMenu(session);
+  }
+  
+  if (choice === "LANG_EN") {
+    await prisma.whatsapp_sessions.update({
+      where: { id: session.id },
+      data: { language: "en", context: { langSet: true } }
+    });
+    session.language = "en";
+    return sendMainMenu(session);
+  }
+  
+  await wa.sendText(session.phone_number, "Please select a language using the buttons.");
+  return sendLanguageMenu(session);
 }
 
 async function handleMainMenuSelection(session, message) {
@@ -91,18 +138,18 @@ async function handleMainMenuSelection(session, message) {
   const choice = message.interactiveId;
 
   if (choice === "MENU_PRICE") {
-    await wa.sendText(session.farmerPhone, strings.askCropForPrice[lang]);
+    await wa.sendText(session.phone_number, strings.askCropForPrice[lang]);
     return setFlow(session, "PRICE_QUERY_CROP");
   }
 
   if (choice === "MENU_DISEASE") {
-    await wa.sendText(session.farmerPhone, strings.askDiseaseImage[lang]);
+    await wa.sendText(session.phone_number, strings.askDiseaseImage[lang]);
     return setFlow(session, "DISEASE_QUERY_WAIT_IMAGE");
   }
 
   if (choice === "MENU_MACHINE") {
     await wa.sendList(
-      session.farmerPhone,
+      session.phone_number,
       strings.machineTypeAsk[lang],
       lang === "ta" ? "தேர்வு செய்ய" : "Select",
       strings.machineTypeRows[lang]
@@ -110,84 +157,7 @@ async function handleMainMenuSelection(session, message) {
     return setFlow(session, "MACHINE_BOOKING_TYPE");
   }
 
-  await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
-  return sendMainMenu(session);
-}
-
-async function handlePriceQuery(session, message) {
-  const lang = session.language || "ta";
-  const cropName = (message.text || "").trim();
-
-  const contextData = typeof session.contextData === 'object' && session.contextData !== null ? session.contextData : {};
-  const priceInfo = await getLatestPrice(cropName, contextData.district);
-
-  if (!priceInfo) {
-    await wa.sendText(session.farmerPhone, strings.priceNotFound[lang]);
-  } else {
-    const reply =
-      lang === "ta"
-        ? `📊 *${cropName}* விலை\nமண்டி: ${priceInfo.market}\nமொத்த விலை: ₹${priceInfo.modalPrice}/குவிண்டால்\nநாள்: ${priceInfo.date}`
-        : `📊 *${cropName}* price\nMarket: ${priceInfo.market}\nModal Price: ₹${priceInfo.modalPrice}/quintal\nDate: ${priceInfo.date}`;
-    await wa.sendText(session.farmerPhone, reply);
-  }
-
-  return sendMainMenu(session);
-}
-
-async function handleDiseaseImage(session, message) {
-  const lang = session.language || "ta";
-
-  if (message.type !== "image" || !message.mediaId) {
-    await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
-    return; // stay in this flow, wait for an actual image
-  }
-
-  await wa.sendText(session.farmerPhone, strings.diseaseProcessing[lang]);
-
-  // Fire-and-forget: the detection service will call back via
-  // whatsappService.sendText once the YOLOv8 model finishes.
-  await queueDiseaseDetection({
-    phoneNumber: session.farmerPhone,
-    mediaId: message.mediaId,
-    language: lang,
-  });
-
-  return setFlow(session, "IDLE");
-}
-
-async function handleMachineTypeSelection(session, message) {
-  const lang = session.language || "ta";
-  const choice = message.interactiveId;
-
-  const validTypes = ["MACHINE_TRACTOR", "MACHINE_HARVESTER", "MACHINE_SPRAYER"];
-  if (!validTypes.includes(choice)) {
-    await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
-    return;
-  }
-
-  await wa.sendText(session.farmerPhone, strings.askBookingDate[lang]);
-  return setFlow(session, "MACHINE_BOOKING_DATE", { machineType: choice });
-}
-
-async function handleMachineBookingDate(session, message) {
-  const lang = session.language || "ta";
-  const dateText = (message.text || "").trim();
-
-  // Basic DD-MM-YYYY validation
-  const match = dateText.match(/^(\d{2})-(\d{2})-(\d{4})$/);
-  if (!match) {
-    await wa.sendText(session.farmerPhone, strings.invalidInput[lang]);
-    return;
-  }
-
-  const contextData = typeof session.contextData === 'object' && session.contextData !== null ? session.contextData : {};
-  await createMachineBookingRequest({
-    phoneNumber: session.farmerPhone,
-    machineType: contextData.machineType,
-    requestedDate: `${match[3]}-${match[2]}-${match[1]}`, // YYYY-MM-DD
-  });
-
-  await wa.sendText(session.farmerPhone, strings.bookingConfirmed[lang]);
+  await wa.sendText(session.phone_number, strings.invalidInput[lang]);
   return sendMainMenu(session);
 }
 
