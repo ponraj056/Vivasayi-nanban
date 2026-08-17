@@ -24,7 +24,7 @@ export default function AdminVerify() {
   const handleVerify = async (id, isVerified) => {
     try {
       await api.patch(`/admin/verifications/${id}/verify`, { isVerified });
-      setUsers((prev) => prev.filter(u => u._id !== id));
+      setUsers((prev) => prev.filter(u => u.id !== id));
     } catch (err) {
       alert("Failed to update verification status.");
     }
@@ -53,7 +53,7 @@ export default function AdminVerify() {
         ) : (
           <div className="divide-y divide-gray-100">
             {users.map((u) => (
-              <div key={u._id} className="p-6 hover:bg-gray-50 transition flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
+              <div key={u.id} className="p-6 hover:bg-gray-50 transition flex flex-col md:flex-row gap-6 justify-between items-start md:items-center">
                 <div className="flex gap-4">
                   <div className={`p-4 rounded-xl flex items-center justify-center ${u.role === "agri_agency" ? "bg-blue-50 text-blue-600" : "bg-orange-50 text-orange-600"}`}>
                     {u.role === "agri_agency" ? <Store size={28} /> : <Tractor size={28} />}
@@ -67,15 +67,15 @@ export default function AdminVerify() {
                     </div>
                     <p className="text-sm text-gray-600 mt-1">Phone: {u.phone} | Email: {u.email || "N/A"}</p>
                     
-                    {u.role === "agri_agency" && u.dealerProfile && (
+                    {u.role === "agri_agency" && u.agency_profile && (
                       <p className="text-xs text-gray-500 mt-2 bg-gray-100 p-2 rounded">
-                        Shop: <strong>{u.dealerProfile.shopName}</strong> | Address: {u.dealerProfile.address}, {u.dealerProfile.district} - {u.dealerProfile.pincode}
+                        Business: <strong>{u.agency_profile.business_name}</strong> | Address: {u.agency_profile.address}, {u.agency_profile.district} - {u.agency_profile.pincode}
                       </p>
                     )}
                     
-                    {u.role === "machine_owner" && u.machineOwnerProfile && (
+                    {u.role === "machine_owner" && (
                       <p className="text-xs text-gray-500 mt-2 bg-gray-100 p-2 rounded">
-                        Service District: <strong>{u.machineOwnerProfile.district}</strong> | Service Radius: {u.machineOwnerProfile.serviceRadius} km
+                        District: <strong>{u.district || "Not specified"}</strong> | Village: {u.village || "Not specified"}
                       </p>
                     )}
                   </div>
@@ -83,13 +83,13 @@ export default function AdminVerify() {
 
                 <div className="flex gap-3 w-full md:w-auto mt-4 md:mt-0">
                   <button
-                    onClick={() => handleVerify(u._id, true)}
+                    onClick={() => handleVerify(u.id, true)}
                     className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition"
                   >
                     <CheckCircle size={18} /> Approve
                   </button>
                   <button
-                    onClick={() => handleVerify(u._id, false)}
+                    onClick={() => handleVerify(u.id, false)}
                     className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-white hover:bg-gray-50 text-red-600 border border-gray-200 hover:border-red-200 px-5 py-2.5 rounded-lg text-sm font-medium transition"
                   >
                     <XCircle size={18} /> Reject

@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import api from "../../api/axiosClient";
 
 export default function AdminPanel() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState(null);
   const [users, setUsers] = useState([]);
@@ -23,10 +23,9 @@ export default function AdminPanel() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const headers = { Authorization: `Bearer ${token}` };
       const [statsRes, usersRes] = await Promise.all([
-        axios.get("http://127.0.0.1:5000/api/admin/stats", { headers }),
-        axios.get(`http://127.0.0.1:5000/api/admin/users?search=${search}&role=${roleFilter}`, { headers }),
+        api.get("/admin/stats"),
+        api.get(`/admin/users?search=${search}&role=${roleFilter}`),
       ]);
       setStats(statsRes.data.stats);
       setUsers(usersRes.data.users);
@@ -39,17 +38,14 @@ export default function AdminPanel() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      if (token) fetchData();
+      if (user?.role === "admin") fetchData();
     }, 500);
     return () => clearTimeout(delayDebounceFn);
   }, [search, roleFilter]);
 
   const toggleUserStatus = async (id, currentStatus) => {
     try {
-      await axios.patch(`http://127.0.0.1:5000/api/admin/users/${id}/status`, 
-        { isActive: !currentStatus }, 
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await api.patch(`/admin/users/${id}/status`, { is_active: !currentStatus });
       fetchData();
     } catch (err) {
       alert("Failed to update status");
@@ -59,9 +55,7 @@ export default function AdminPanel() {
   const deleteUser = async (id) => {
     if (!window.confirm("Are you sure you want to delete this user?")) return;
     try {
-      await axios.delete(`http://127.0.0.1:5000/api/admin/users/${id}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.delete(`/admin/users/${id}`);
       fetchData();
     } catch (err) {
       alert("Failed to delete user");
@@ -126,10 +120,10 @@ export default function AdminPanel() {
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u._id} style={styles.tr}>
+                  <tr key={u.id} style={styles.tr}>
                     <td style={styles.td}>
                       <div style={{ fontWeight: 600 }}>{u.name}</div>
-                      <div style={{ fontSize: 12, color: "#777" }}>Joined: {new Date(u.createdAt).toLocaleDateString()}</div>
+                      <div style={{ fontSize: 12, color: "#777" }}>Joined: {new Date(u.created_at).toLocaleDateString()}</div>
                     </td>
                     <td style={styles.td}>
                       <div>{u.email || "N/A"}</div>
@@ -137,24 +131,24 @@ export default function AdminPanel() {
                     </td>
                     <td style={styles.td}>
                       <span style={{ ...styles.badge, background: getRoleColor(u.role) }}>
-                        {u.role.toUpperCase()}
+                        {u.role.toUpperCase().replace("_", " ")}
                       </span>
                     </td>
                     <td style={styles.td}>
-                      <span style={{ ...styles.badge, background: u.isActive ? "#2E7D32" : "#c62828" }}>
-                        {u.isActive ? "ACTIVE" : "INACTIVE"}
+                      <span style={{ ...styles.badge, background: u.is_active ? "#2E7D32" : "#c62828" }}>
+                        {u.is_active ? "ACTIVE" : "INACTIVE"}
                       </span>
                     </td>
                     <td style={styles.td}>
                       <div style={{ display: "flex", gap: 8 }}>
                         <button 
-                          onClick={() => toggleUserStatus(u._id, u.isActive)}
-                          style={{ ...styles.actionBtn, background: u.isActive ? "#f57c00" : "#2E7D32" }}
+                          onClick={() => toggleUserStatus(u.id, u.is_active)}
+                          style={{ ...styles.actionBtn, background: u.is_active ? "#f57c00" : "#2E7D32" }}
                         >
-                          {u.isActive ? "Deactivate" : "Activate"}
+                          {u.is_active ? "Deactivate" : "Activate"}
                         </button>
                         <button 
-                          onClick={() => deleteUser(u._id)}
+                          onClick={() => deleteUser(u.id)}
                           style={{ ...styles.actionBtn, background: "#c62828" }}
                         >
                           Delete

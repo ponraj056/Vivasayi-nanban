@@ -16,20 +16,20 @@ async function getOverviewStats(req, res) {
       activeSessions,
       messagesLast7Days,
     ] = await Promise.all([
-      prisma.user.count({ where: { role: "farmer" } }),
-      prisma.user.count({ where: { role: "dealer" } }),
-      prisma.user.count({ where: { role: "machine_owner" } }),
-      prisma.user.count({ where: { role: "admin" } }),
-      prisma.machineBooking.count(),
-      prisma.machineBooking.count({ where: { status: "PENDING" } }),
-      prisma.whatsappSession.count({
+      prisma.users.count({ where: { role: "farmer" } }),
+      prisma.users.count({ where: { role: { in: ["dealer", "agri_agency"] } } }),
+      prisma.users.count({ where: { role: "machine_owner" } }),
+      prisma.users.count({ where: { role: "admin" } }),
+      prisma.machine_bookings.count(),
+      prisma.machine_bookings.count({ where: { status: "pending" } }),
+      prisma.whatsapp_sessions.count({
         where: {
-          updatedAt: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
+          last_message_at: { gte: new Date(Date.now() - 24 * 60 * 60 * 1000) },
         },
       }),
-      prisma.whatsAppMessageLog.count({
+      prisma.whatsapp_message_logs.count({
         where: {
-          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
+          created_at: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
         },
       }),
     ]);
@@ -73,20 +73,20 @@ async function getUsers(req, res) {
       ];
     }
 
-    const users = await prisma.user.findMany({
+    const users = await prisma.users.findMany({
       where: filter,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       skip: (Number(page) - 1) * Number(limit),
       take: Number(limit),
     });
     
     // Omit passwords
     const safeUsers = users.map(user => {
-      const { password, ...safeUser } = user;
+      const { password_hash, ...safeUser } = user;
       return safeUser;
     });
 
-    const total = await prisma.user.count({ where: filter });
+    const total = await prisma.users.count({ where: filter });
 
     res.json({
       success: true,
@@ -100,17 +100,19 @@ async function getUsers(req, res) {
 
 /**
  * PATCH /api/admin/users/:id/status
- * body: { isActive: true|false }
+ * body: { is_active: true|false }
  */
 async function updateUserStatus(req, res) {
   try {
-    const { isActive } = req.body;
-    const user = await prisma.user.update({
+    const { is_active, isActive } = req.body;
+    // accept both isActive and is_active for frontend compatibility
+    const targetStatus = is_active !== undefined ? is_active : isActive;
+    const user = await prisma.users.update({
       where: { id: req.params.id },
-      data: { isActive },
+      data: { is_active: targetStatus },
     });
 
-    delete user.password;
+    delete user.password_hash;
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -124,12 +126,12 @@ async function updateUserStatus(req, res) {
 async function updateUserRole(req, res) {
   try {
     const { role } = req.body;
-    const user = await prisma.user.update({
+    const user = await prisma.users.update({
       where: { id: req.params.id },
       data: { role },
     });
 
-    delete user.password;
+    delete user.password_hash;
     res.json({ success: true, user });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -141,7 +143,7 @@ async function updateUserRole(req, res) {
  */
 async function deleteUser(req, res) {
   try {
-    await prisma.user.delete({
+    await prisma.users.delete({
       where: { id: req.params.id },
     });
     res.json({ success: true, message: "User deleted successfully" });
@@ -155,12 +157,10 @@ async function deleteUser(req, res) {
  */
 async function getWhatsAppSessions(req, res) {
   try {
-    const sessions = await prisma.whatsappSession.findMany({
-      orderBy: { updatedAt: 'desc' },
+    const sessions = await prisma.whatsapp_sessions.findMany({
+      orderBy: { last_message_at: 'desc' },
       take: 100,
     });
-
-    // If we had a direct relation to User, we'd include it. But here we join manually if needed, or schema can handle it.
     res.json({ success: true, sessions });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
@@ -172,9 +172,9 @@ async function getWhatsAppSessions(req, res) {
  */
 async function getWhatsAppMessages(req, res) {
   try {
-    const messages = await prisma.whatsAppMessageLog.findMany({
-      where: { phoneNumber: req.params.phoneNumber },
-      orderBy: { createdAt: 'asc' },
+    const messages = await prisma.whatsapp_message_logs.findMany({
+      where: { phone_number: req.params.phoneNumber },
+      orderBy: { created_at: 'asc' },
     });
 
     res.json({ success: true, messages });
@@ -184,19 +184,19 @@ async function getWhatsAppMessages(req, res) {
 }
 
 /**
- * GET /api/admin/bookings?status=PENDING
+ * GET /api/admin/bookings?status=pending
  */
 async function getBookings(req, res) {
   try {
     const { status } = req.query;
     const filter = status ? { status } : {};
 
-    const bookings = await prisma.machineBooking.findMany({
+    const bookings = await prisma.machine_bookings.findMany({
       where: filter,
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       include: {
         farmer: { select: { name: true } },
-        machineOwner: { select: { name: true } }
+        machine_owner: { select: { name: true } }
       }
     });
 
@@ -214,9 +214,9 @@ async function updateBookingStatus(req, res) {
     const { status, adminNote } = req.body;
 
     const data = { status };
-    if (adminNote) data.adminNote = adminNote;
+    if (adminNote) data.admin_note = adminNote;
 
-    const booking = await prisma.machineBooking.update({
+    const booking = await prisma.machine_bookings.update({
       where: { id: req.params.id },
       data,
     });
@@ -232,20 +232,33 @@ async function updateBookingStatus(req, res) {
  */
 async function getPendingVerifications(req, res) {
   try {
-    const pendingUsers = await prisma.user.findMany({
+    // Agencies pending verification
+    const pendingAgencies = await prisma.users.findMany({
       where: {
-        role: { in: ["agri_agency", "machine_owner"] },
-        isVerified: false
+        role: "agri_agency",
+        agency_profile: {
+          verification_status: "pending"
+        }
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: { created_at: 'desc' },
       include: {
-        dealerProfile: true,
-        machineOwnerProfile: true
+        agency_profile: true,
       }
     });
     
+    // Machine owners inactive (used as pending)
+    const pendingMachineOwners = await prisma.users.findMany({
+      where: {
+        role: "machine_owner",
+        is_active: false
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    const pendingUsers = [...pendingAgencies, ...pendingMachineOwners];
+
     const safeUsers = pendingUsers.map(user => {
-      const { password, ...safeUser } = user;
+      const { password_hash, ...safeUser } = user;
       return safeUser;
     });
 
@@ -260,14 +273,37 @@ async function getPendingVerifications(req, res) {
  */
 async function verifyUser(req, res) {
   try {
-    const { isVerified } = req.body;
-    const user = await prisma.user.update({
+    const { isVerified } = req.body; // true = approve, false = reject
+    
+    const user = await prisma.users.findUnique({
       where: { id: req.params.id },
-      data: { isVerified },
+      include: { agency_profile: true }
     });
 
-    delete user.password;
-    res.json({ success: true, user });
+    if (!user) {
+      return res.status(404).json({ success: false, message: "User not found" });
+    }
+
+    if (user.role === "agri_agency") {
+      await prisma.users.update({
+        where: { id: user.id },
+        data: {
+          is_active: isVerified,
+          agency_profile: {
+            update: {
+              verification_status: isVerified ? "approved" : "rejected"
+            }
+          }
+        }
+      });
+    } else {
+      await prisma.users.update({
+        where: { id: user.id },
+        data: { is_active: isVerified }
+      });
+    }
+
+    res.json({ success: true, message: "User verification status updated" });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });
   }
