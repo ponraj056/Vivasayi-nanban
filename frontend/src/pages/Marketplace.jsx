@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import api from '../api/axiosClient';
 import { ShoppingBag, Search, PhoneCall } from 'lucide-react';
 
 export default function Marketplace() {
@@ -12,11 +13,9 @@ export default function Marketplace() {
 
   const fetchProducts = async () => {
     try {
-      // Proxy setup assumes 127.0.0.1:5000 is accessible
-      const res = await fetch('http://127.0.0.1:5000/api/dealer/products');
-      const data = await res.json();
-      if (data.success) {
-        setProducts(data.products);
+      const res = await api.get('/products');
+      if (res.data.success) {
+        setProducts(res.data.products || res.data.data || []);
       }
     } catch (err) {
       console.error('Failed to fetch products', err);
@@ -57,7 +56,7 @@ export default function Marketplace() {
       ) : filteredProducts.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredProducts.map(product => (
-            <div key={product._id} className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 transition-shadow">
+            <div key={product.id} className="bg-white p-6 rounded-2xl shadow-sm hover:shadow-md border border-gray-100 transition-shadow">
               <span className="inline-block px-3 py-1 bg-green-100 text-green-700 text-xs font-semibold rounded-full mb-3">
                 {product.category}
               </span>

@@ -65,7 +65,7 @@ export default function RentMachine() {
     try {
       setBookingLoading(true);
       setBookingSuccess("");
-      await api.post(`/machines/${selectedMachine._id}/book`, { requestedDate });
+      await api.post(`/machines/${selectedMachine.id}/book`, { requestedDate });
       setBookingSuccess("Booking request sent successfully!");
       setRequestedDate("");
       setTimeout(() => {
@@ -172,7 +172,7 @@ export default function RentMachine() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {machines.map((machine) => (
-                <div key={machine._id} className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition">
+                <div key={machine.id} className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition-all">
                   {machine.photoUrl ? (
                     <img src={machine.photoUrl} alt={machine.name} className="w-full h-48 object-cover" />
                   ) : (

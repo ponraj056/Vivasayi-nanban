@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import api from '../api/axiosClient';
 import { UploadCloud, CheckCircle, AlertCircle, Loader } from 'lucide-react';
 
 export default function DiseaseCheck() {
@@ -27,19 +28,16 @@ export default function DiseaseCheck() {
     formData.append('image', file);
 
     try {
-      const token = localStorage.getItem('token') || 'dummy-token';
-      const response = await fetch('http://127.0.0.1:5000/api/disease/detect', {
-        method: 'POST',
+      const response = await api.post('/disease/detect', formData, {
         headers: {
-          Authorization: `Bearer ${token}`
-        },
-        body: formData,
+          'Content-Type': 'multipart/form-data'
+        }
       });
       
-      const data = await response.json();
+      const data = response.data;
       
       if (data.success) {
-        setResult(data.result);
+        setResult(data.result || data.data);
       } else {
         setError(data.message || 'Something went wrong.');
       }

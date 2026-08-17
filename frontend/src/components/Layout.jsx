@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useLanguage } from "../context/LanguageContext";
 import {
   Menu,
   X,
@@ -19,6 +20,7 @@ import {
 
 export default function Layout({ children }) {
   const { user, logout } = useAuth();
+  const { lang, changeLanguage, t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -146,6 +148,14 @@ export default function Layout({ children }) {
           </button>
 
           <div className="flex-1 flex justify-end items-center gap-4">
+            <select
+              value={lang}
+              onChange={(e) => changeLanguage(e.target.value)}
+              className="text-sm bg-gray-50 border border-gray-200 text-gray-700 py-1 px-2 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            >
+              <option value="en">English</option>
+              <option value="ta">தமிழ்</option>
+            </select>
             <span className="px-3 py-1 text-xs font-semibold text-green-700 bg-green-100 rounded-full uppercase tracking-wider">
               {user.role.replace("_", " ")}
             </span>
