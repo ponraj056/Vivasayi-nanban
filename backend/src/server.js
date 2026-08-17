@@ -17,6 +17,7 @@ const bookingRoutes = require("./routes/bookingRoutes");
 const productRoutes = require("./routes/productRoutes");
 const inquiryRoutes = require("./routes/inquiryRoutes");
 const broadcastRoutes = require("./routes/broadcastRoutes");
+const translationRoutes = require("./routes/translationRoutes");
 const { startCronJobs } = require("./cronService");
 
 const app = express();
@@ -41,6 +42,7 @@ app.use("/api/bookings", bookingRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/inquiries", inquiryRoutes);
 app.use("/api/broadcast", broadcastRoutes);
+app.use("/api/translations", translationRoutes);
 
 // Health check
 app.get("/", (req, res) => {
