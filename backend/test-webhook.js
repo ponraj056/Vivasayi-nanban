@@ -105,7 +105,11 @@ async function testFlow() {
 
   // 3. Select Crop Price from Main Menu
   await sendDummyInteractiveReply("MENU_PRICE", "விவசாயி (Crop Price)");
+  await new Promise(r => setTimeout(r, 1000));
 
+  // 4. Send crop name "தக்காளி"
+  await sendDummyMessage("தக்காளி");
+  
   console.log("--- Test Complete ---");
 }
 

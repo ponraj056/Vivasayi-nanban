@@ -1,24 +1,35 @@
+const prisma = require("../config/prisma");
+
 /**
- * TODO: Replace this with a real call into your Crop Calendar +
- * Agmarknet Price module (the one already built). E.g.:
- *
- *   const CropPrice = require("../models/CropPrice");
- *   const record = await CropPrice.findOne({ crop: cropName, district })
- *     .sort({ date: -1 });
- *
- * Kept as a separate file so the bot flow never needs to change,
- * only this lookup function.
+ * Fetch the latest crop price from the database.
  */
 async function getLatestPrice(cropName, district) {
-  // Stubbed sample response — swap with real DB/API lookup.
-  const sample = {
-    market: district || "Karur",
-    modalPrice: 2150,
-    date: new Date().toISOString().slice(0, 10),
-  };
-
   if (!cropName) return null;
-  return sample;
+
+  try {
+    const where = {
+      crop_name: { contains: cropName, mode: "insensitive" }
+    };
+    if (district) {
+      where.district = { contains: district, mode: "insensitive" };
+    }
+
+    const priceRecord = await prisma.crop_prices.findFirst({
+      where,
+      orderBy: { price_date: "desc" }
+    });
+
+    if (!priceRecord) return null;
+
+    return {
+      market: priceRecord.market || priceRecord.district,
+      modalPrice: priceRecord.modal_price,
+      date: priceRecord.price_date.toISOString().slice(0, 10),
+    };
+  } catch (error) {
+    console.error("Error looking up crop price:", error);
+    return null;
+  }
 }
 
 module.exports = { getLatestPrice };

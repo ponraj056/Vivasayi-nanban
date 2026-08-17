@@ -1,7 +1,7 @@
 const prisma = require("../config/prisma");
 const wa = require("./whatsappService");
 const strings = require("./botStrings");
-// const cropPriceLookup = require("./cropPriceLookupService");
+const cropPriceLookup = require("./cropPriceLookupService");
 // const diseaseDetection = require("./diseaseDetectionService");
 // const machineBooking = require("./machineBookingService");
 
@@ -89,9 +89,7 @@ async function handleIncomingMessage(phoneNumber, message) {
       return handleMainMenuSelection(session, message);
 
     case "PRICE_QUERY_CROP":
-      // Placeholder until Stage 5
-      await wa.sendText(session.phone_number, "Crop prices module is under development.");
-      return sendMainMenu(session);
+      return handlePriceQuery(session, message);
 
     case "DISEASE_QUERY_WAIT_IMAGE":
       // Placeholder until Stage 6
@@ -158,6 +156,26 @@ async function handleMainMenuSelection(session, message) {
   }
 
   await wa.sendText(session.phone_number, strings.invalidInput[lang]);
+  return sendMainMenu(session);
+}
+
+async function handlePriceQuery(session, message) {
+  const lang = session.language || "ta";
+  const cropName = (message.text || "").trim();
+
+  const contextData = typeof session.context === 'object' && session.context !== null ? session.context : {};
+  const priceInfo = await cropPriceLookup.getLatestPrice(cropName, contextData.district);
+
+  if (!priceInfo) {
+    await wa.sendText(session.phone_number, strings.priceNotFound[lang]);
+  } else {
+    const reply =
+      lang === "ta"
+        ? `📊 *${cropName}* விலை\nமண்டி: ${priceInfo.market}\nமொத்த விலை: ₹${priceInfo.modalPrice}/குவிண்டால்\nநாள்: ${priceInfo.date}`
+        : `📊 *${cropName}* price\nMarket: ${priceInfo.market}\nModal Price: ₹${priceInfo.modalPrice}/quintal\nDate: ${priceInfo.date}`;
+    await wa.sendText(session.phone_number, reply);
+  }
+
   return sendMainMenu(session);
 }
 
