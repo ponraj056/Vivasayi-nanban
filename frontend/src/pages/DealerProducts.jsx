@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import api from '../api/axiosClient';
 import { Package, Plus } from 'lucide-react';
 
 export default function DealerProducts() {
@@ -7,7 +8,7 @@ export default function DealerProducts() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({
-    name: '', category: 'Seeds', price: '', description: '', contactNumber: ''
+    name: '', category: 'seed', price: '', description: '', unit: 'kg', stock_quantity: '', district: ''
   });
 
   useEffect(() => {
@@ -16,13 +17,11 @@ export default function DealerProducts() {
 
   const fetchMyProducts = async () => {
     try {
-      // Simulate auth token
-      const token = localStorage.getItem('token') || 'dummy-token';
-      const res = await fetch('http://127.0.0.1:5000/api/dealer/my-products', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success) setProducts(data.products);
+      setLoading(true);
+      const res = await api.get('/dealer/my-products');
+      if (res.data.success) {
+        setProducts(res.data.products);
+      }
     } catch (err) {
       console.error(err);
     } finally {
@@ -32,23 +31,15 @@ export default function DealerProducts() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const token = localStorage.getItem('token') || 'dummy-token';
     try {
-      const res = await fetch('http://127.0.0.1:5000/api/dealer/products', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify(formData)
-      });
-      const data = await res.json();
-      if (data.success) {
-        setProducts([data.product, ...products]);
-        setFormData({ name: '', category: 'Seeds', price: '', description: '', contactNumber: '' });
+      const res = await api.post('/dealer/products', formData);
+      if (res.data.success) {
+        setProducts([res.data.product, ...products]);
+        setFormData({ name: '', category: 'seed', price: '', description: '', unit: 'kg', stock_quantity: '', district: '' });
       }
     } catch (err) {
       console.error(err);
+      alert('Failed to add product');
     }
   };
 
@@ -67,20 +58,37 @@ export default function DealerProducts() {
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
             <select className="w-full p-2 border border-gray-300 rounded-lg" value={formData.category} onChange={e => setFormData({...formData, category: e.target.value})}>
-              <option>Seeds</option>
-              <option>Fertilizer</option>
-              <option>Pesticide</option>
-              <option>Tools</option>
-              <option>Other</option>
+              <option value="seed">Seeds</option>
+              <option value="fertilizer">Fertilizer</option>
+              <option value="organic_fertilizer">Organic Fertilizer</option>
+              <option value="bio_fertilizer">Bio Fertilizer</option>
+              <option value="nutrient">Nutrient</option>
+              <option value="plant_protection">Plant Protection</option>
+              <option value="tool">Tools</option>
+              <option value="irrigation">Irrigation</option>
+              <option value="machinery">Machinery</option>
+              <option value="other">Other</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
-            <input required type="number" className="w-full p-2 border border-gray-300 rounded-lg" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
+              <input required type="number" className="w-full p-2 border border-gray-300 rounded-lg" value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Unit (e.g. kg, L)</label>
+              <input required type="text" className="w-full p-2 border border-gray-300 rounded-lg" value={formData.unit} onChange={e => setFormData({...formData, unit: e.target.value})} />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Contact Number</label>
-            <input required type="text" className="w-full p-2 border border-gray-300 rounded-lg" value={formData.contactNumber} onChange={e => setFormData({...formData, contactNumber: e.target.value})} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Stock Qty</label>
+              <input required type="number" className="w-full p-2 border border-gray-300 rounded-lg" value={formData.stock_quantity} onChange={e => setFormData({...formData, stock_quantity: e.target.value})} />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">District</label>
+              <input required type="text" className="w-full p-2 border border-gray-300 rounded-lg" value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
@@ -103,11 +111,17 @@ export default function DealerProducts() {
         ) : products.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {products.map(p => (
-              <div key={p._id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
-                <span className="self-start px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded mb-2">{p.category}</span>
+              <div key={p.id} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex flex-col">
+                <div className="flex justify-between items-start mb-2">
+                  <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded capitalize">{p.category.replace('_', ' ')}</span>
+                  <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs font-semibold rounded">{p.district}</span>
+                </div>
                 <h4 className="font-bold text-lg">{p.name}</h4>
                 <p className="text-gray-500 text-sm mb-3 flex-grow">{p.description}</p>
-                <div className="text-xl font-bold text-gray-800">₹{p.price}</div>
+                <div className="flex justify-between items-end mt-2">
+                  <div className="text-xl font-bold text-gray-800">₹{p.price} <span className="text-sm font-normal text-gray-500">/ {p.unit}</span></div>
+                  <div className="text-sm text-gray-500">Stock: <span className="font-semibold text-gray-800">{p.stock_quantity}</span></div>
+                </div>
               </div>
             ))}
           </div>

@@ -3,20 +3,20 @@ const prisma = require('../config/prisma');
 // Add a new product (Dealer only)
 const addProduct = async (req, res) => {
   try {
-    const dealerId = req.user.id;
-    const { name, category, price, description, contactNumber, district, taluk, village } = req.body;
+    const agency_id = req.user.id;
+    const { name, category, price, description, unit, stock_quantity, district } = req.body;
 
-    const product = await prisma.product.create({
+    const product = await prisma.products.create({
       data: {
         name,
-        category,
+        category, // Must be one of ProductCategory enum e.g. "seed", "fertilizer"
         price: parseFloat(price),
-        dealerId,
+        agency_id,
         description: description || "",
-        contactNumber,
+        unit: unit || "kg",
+        stock_quantity: parseInt(stock_quantity, 10) || 0,
         district: district || "",
-        taluk: taluk || "",
-        village: village || "",
+        is_available: true
       }
     });
 
@@ -30,11 +30,12 @@ const addProduct = async (req, res) => {
 // Get all products by a specific dealer (For Dealer Dashboard)
 const getDealerProducts = async (req, res) => {
   try {
-    const dealerId = req.user.id;
-    const products = await prisma.product.findMany({
-      where: { dealerId },
-      orderBy: { createdAt: 'desc' }
+    const agency_id = req.user.id;
+    const products = await prisma.products.findMany({
+      where: { agency_id },
+      orderBy: { created_at: 'desc' }
     });
+    // Map id to be compatible with frontend if needed, but Prisma uses id by default.
     res.status(200).json({ success: true, products });
   } catch (error) {
     console.error('Error fetching dealer products:', error);
@@ -45,11 +46,11 @@ const getDealerProducts = async (req, res) => {
 // Get all products (For Farmer Marketplace)
 const getAllProducts = async (req, res) => {
   try {
-    const products = await prisma.product.findMany({
+    const products = await prisma.products.findMany({
       include: {
-        dealer: { select: { name: true, email: true } }
+        agency: { select: { name: true, phone: true } }
       },
-      orderBy: { createdAt: 'desc' }
+      orderBy: { created_at: 'desc' }
     });
     res.status(200).json({ success: true, products });
   } catch (error) {
