@@ -94,6 +94,10 @@ async function sendList(to, bodyText, buttonLabel, rows) {
  * Get a temporary download URL for a media ID (used for disease-detection images)
  */
 async function getMediaUrl(mediaId) {
+  if (!WA_TOKEN || WA_TOKEN === "your_meta_system_user_token_here") {
+    return "http://mock-media-url.com/image.jpg";
+  }
+
   const res = await client.get(`/${mediaId}`.replace(BASE_URL, ""), {
     baseURL: `https://graph.facebook.com/${WA_API_VERSION}`,
   });
@@ -101,6 +105,11 @@ async function getMediaUrl(mediaId) {
 }
 
 async function downloadMedia(mediaUrl) {
+  if (!WA_TOKEN || WA_TOKEN === "your_meta_system_user_token_here" || mediaUrl.includes("mock-media")) {
+    // Return a dummy 1x1 transparent JPEG or similar small buffer
+    return Buffer.from([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01, 0x01, 0x01, 0x00, 0x48, 0x00, 0x48, 0x00, 0x00, 0xFF, 0xDB, 0x00, 0x43, 0x00, 0xFF, 0xD9]);
+  }
+
   const res = await axios.get(mediaUrl, {
     headers: { Authorization: `Bearer ${WA_TOKEN}` },
     responseType: "arraybuffer",

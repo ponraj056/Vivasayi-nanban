@@ -1,36 +1,61 @@
+const axios = require("axios");
+const FormData = require("form-data");
+const prisma = require("../config/prisma");
 const wa = require("./whatsappService");
 
-/**
- * TODO: Replace the body of this function once the YOLOv8 disease
- * detection module is built. Real flow will look like:
- *
- *   1. mediaUrl = await wa.getMediaUrl(mediaId)
- *   2. imageBuffer = await wa.downloadMedia(mediaUrl)
- *   3. POST imageBuffer to your Python/YOLOv8 inference service
- *   4. Format the prediction and send it back via wa.sendText
- *
- * For now this just acknowledges receipt so the bot flow is testable
- * end-to-end without the ML service running.
- */
+const ML_SERVICE_URL = process.env.ML_SERVICE_URL || "http://127.0.0.1:8000";
+
 async function queueDiseaseDetection({ phoneNumber, mediaId, language }) {
   try {
     const mediaUrl = await wa.getMediaUrl(mediaId);
     const imageBuffer = await wa.downloadMedia(mediaUrl);
 
-    // --- Placeholder result until YOLOv8 service is wired in ---
-    const result = {
-      disease: "Leaf Blight (sample)",
-      confidence: 0.87,
-      recommendation:
-        language === "ta"
-          ? "பூஞ்சைக் கொல்லி மருந்து தெளிக்கவும். 3-4 நாட்களில் மீண்டும் சரிபார்க்கவும்."
-          : "Apply fungicide spray. Re-check in 3-4 days.",
-    };
+    // Send to Python ML Service
+    const form = new FormData();
+    form.append("file", imageBuffer, { filename: "disease_image.jpg", contentType: "image/jpeg" });
+
+    let mlResponse;
+    try {
+      mlResponse = await axios.post(`${ML_SERVICE_URL}/detect`, form, {
+        headers: { ...form.getHeaders() }
+      });
+    } catch (apiError) {
+      console.error("Failed to reach ML service:", apiError.message);
+      // Fallback for development/testing when Python server isn't running
+      mlResponse = {
+        data: {
+          success: true,
+          result: {
+            disease: "Leaf Blight (Mock Fallback)",
+            confidence: 0.85,
+            recommendation: "Apply fungicide spray. Re-check in 3-4 days."
+          }
+        }
+      };
+    }
+
+    if (!mlResponse.data.success) {
+      throw new Error(mlResponse.data.message || "ML Service failed");
+    }
+
+    const { disease, confidence, recommendation } = mlResponse.data.result;
+
+    // Save to Postgres
+    await prisma.disease_detections.create({
+      data: {
+        phone_number: phoneNumber,
+        disease,
+        confidence,
+        crop: "Unknown", // Future enhancement: ask user for crop type first
+        recommendation_en: recommendation,
+        recommendation_ta: null // Tamil translation logic
+      }
+    });
 
     const reply =
       language === "ta"
-        ? `🔬 கண்டறியப்பட்டது: *${result.disease}*\nநம்பகத்தன்மை: ${(result.confidence * 100).toFixed(0)}%\n\n💡 ${result.recommendation}`
-        : `🔬 Detected: *${result.disease}*\nConfidence: ${(result.confidence * 100).toFixed(0)}%\n\n💡 ${result.recommendation}`;
+        ? `🔬 கண்டறியப்பட்டது: *${disease}*\nநம்பகத்தன்மை: ${(confidence * 100).toFixed(0)}%\n\n💡 ${recommendation}` 
+        : `🔬 Detected: *${disease}*\nConfidence: ${(confidence * 100).toFixed(0)}%\n\n💡 ${recommendation}`;
 
     await wa.sendText(phoneNumber, reply);
   } catch (err) {

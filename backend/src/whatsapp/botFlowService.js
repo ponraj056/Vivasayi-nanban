@@ -2,7 +2,7 @@ const prisma = require("../config/prisma");
 const wa = require("./whatsappService");
 const strings = require("./botStrings");
 const cropPriceLookup = require("./cropPriceLookupService");
-// const diseaseDetection = require("./diseaseDetectionService");
+const diseaseDetection = require("./diseaseDetectionService");
 // const machineBooking = require("./machineBookingService");
 
 /**
@@ -92,9 +92,7 @@ async function handleIncomingMessage(phoneNumber, message) {
       return handlePriceQuery(session, message);
 
     case "DISEASE_QUERY_WAIT_IMAGE":
-      // Placeholder until Stage 6
-      await wa.sendText(session.phone_number, "Disease detection module is under development.");
-      return sendMainMenu(session);
+      return handleDiseaseImage(session, message);
 
     case "MACHINE_BOOKING_TYPE":
       // Placeholder until Stage 7
@@ -177,6 +175,27 @@ async function handlePriceQuery(session, message) {
   }
 
   return sendMainMenu(session);
+}
+
+async function handleDiseaseImage(session, message) {
+  const lang = session.language || "ta";
+
+  if (message.type !== "image" || !message.mediaId) {
+    await wa.sendText(session.phone_number, strings.invalidInput[lang]);
+    return; // stay in this flow, wait for an actual image
+  }
+
+  await wa.sendText(session.phone_number, strings.diseaseProcessing[lang]);
+
+  // Fire-and-forget: the detection service will call back via
+  // whatsappService.sendText once the YOLOv8 model finishes.
+  await diseaseDetection.queueDiseaseDetection({
+    phoneNumber: session.phone_number,
+    mediaId: message.mediaId,
+    language: lang,
+  });
+
+  return setFlow(session, "IDLE");
 }
 
 module.exports = { handleIncomingMessage, getOrCreateSession };
